@@ -1,17 +1,33 @@
-# Dependências e builds (futuro app Next.js)
+# Dependências
 node_modules/
-.next/
-out/
-dist/
+/.pnp
+.pnp.*
+
+# Next.js
+/.next/
+/out/
+/build
+*.tsbuildinfo
+next-env.d.ts
+
+# Testes
+/coverage
 
 # Ambiente e segredos
-.env
-.env.*
+.env*
 !.env.example
+
+# Vercel
+.vercel
 
 # Sistema e IDE
 .DS_Store
 Thumbs.db
+*.pem
 
 # Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
