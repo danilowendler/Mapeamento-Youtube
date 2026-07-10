@@ -17,12 +17,12 @@ Objetivo: esqueleto do projeto com qualidade de produção desde o primeiro comm
 Entregáveis:
 - Next.js (App Router) + TypeScript estrito + Tailwind, estrutura de pastas do [doc 4, §4.3](04-arquitetura.md)
 - Tokens do design system ([DESIGN-ferrari.md](../DESIGN-ferrari.md)) mapeados no Tailwind (cores semânticas, escada de espaçamento, tipografia Inter via `next/font`)
-- Projetos Supabase (dev + prod) + Supabase CLI com migrations vazias funcionando
+- Projeto Supabase de desenvolvimento + Supabase CLI com migrations funcionando (o projeto de **produção** é criado só no M4, antes do beta — aplicar as migrations acumuladas nele do zero valida que elas reconstroem o banco inteiro)
 - Contas/integrações: Inngest (dev), Google Cloud (chave YouTube com restrição de API)
 - CI (GitHub Actions): typecheck + lint + testes em todo push
 - Variáveis de ambiente documentadas (`.env.example`)
 
-✅ Conclusão: `pnpm build` e CI verdes; página inicial vazia deployada na Vercel com preview por PR; migration de teste aplicada via CLI nos dois ambientes.
+✅ Conclusão: `pnpm build` e CI verdes; página inicial vazia deployada na Vercel com preview por PR; migration de teste aplicada via CLI no projeto de desenvolvimento.
 
 ### M1 · Auth + shell do app (3–4 dias) — [C1]
 Objetivo: entrar no produto com segurança.
@@ -59,7 +59,7 @@ Entregáveis:
 ✅ Conclusão: pesquisar uma lista de 5 canais frios → primeiros cards < 15 s, lista completa < 3 min; pesquisa repetida → tudo < 2 s; scores conferidos manualmente contra planilha para 2 canais conhecidos.
 
 ### M4 · Histórico + beta fechado (2–3 dias) — [C6] → **marco: Estágio C lançável**
-Entregáveis: tela Histórico (reabrir sem reprocessar), estados de erro/vazio/fila projetados no [doc 6, §6.5](06-ux-ui.md), Sentry ativo, seed de convites (acesso restrito por lista).
+Entregáveis: tela Histórico (reabrir sem reprocessar), estados de erro/vazio/fila projetados no [doc 6, §6.5](06-ux-ui.md), Sentry ativo, seed de convites (acesso restrito por lista), **criação do projeto Supabase de produção** (migrations aplicadas do zero + Vercel de produção apontando para ele).
 
 ✅ Conclusão: 10 usuários beta completam uma análise sem suporte; custo de cota por pesquisa medido e registrado no [doc 3](03-estrategia-de-dados.md); feedback coletado.
 
