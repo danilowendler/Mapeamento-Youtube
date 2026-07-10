@@ -1,0 +1,17 @@
+# Dependências e builds (futuro app Next.js)
+node_modules/
+.next/
+out/
+dist/
+
+# Ambiente e segredos
+.env
+.env.*
+!.env.example
+
+# Sistema e IDE
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

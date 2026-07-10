@@ -1,0 +1,128 @@
+# 9 · Plano de Implementação
+
+> Roteiro executável do MVP em **10 milestones** agrupados nos estágios lançáveis C → B → A ([doc 2](02-requisitos-e-escopo.md)). Cada milestone tem critérios de conclusão **verificáveis** — um milestone só fecha quando todos passam. Nenhum código é escrito fora da ordem daqui sem atualizar este documento.
+
+**Convenções de execução:**
+- Branch por milestone (`m1-auth`, `m2-coleta`...), merge em `main` só com CI verde.
+- Ao final de cada milestone: demo manual do critério de conclusão + registro de aprendizados que alterem docs.
+- Referências: cada milestone aponta os documentos que governam seu conteúdo.
+
+---
+
+## Estágio C — Núcleo mágico (milestones 0–4 · semanas 1–3)
+
+### M0 · Fundação (2–3 dias)
+Objetivo: esqueleto do projeto com qualidade de produção desde o primeiro commit.
+
+Entregáveis:
+- Next.js (App Router) + TypeScript estrito + Tailwind, estrutura de pastas do [doc 4, §4.3](04-arquitetura.md)
+- Tokens do design system ([DESIGN-ferrari.md](../DESIGN-ferrari.md)) mapeados no Tailwind (cores semânticas, escada de espaçamento, tipografia Inter via `next/font`)
+- Projetos Supabase (dev + prod) + Supabase CLI com migrations vazias funcionando
+- Contas/integrações: Inngest (dev), Google Cloud (chave YouTube com restrição de API)
+- CI (GitHub Actions): typecheck + lint + testes em todo push
+- Variáveis de ambiente documentadas (`.env.example`)
+
+✅ Conclusão: `pnpm build` e CI verdes; página inicial vazia deployada na Vercel com preview por PR; migration de teste aplicada via CLI nos dois ambientes.
+
+### M1 · Auth + shell do app (3–4 dias) — [C1]
+Objetivo: entrar no produto com segurança.
+
+Entregáveis:
+- Supabase Auth: e-mail/senha com verificação + Google OAuth; `middleware.ts` protegendo o app
+- Trigger de criação de `profiles`; migration inicial da zona de usuário com RLS ([doc 5, §5.2](05-modelo-de-dados.md))
+- Shell autenticado: sidebar (Nova Pesquisa · Histórico · Conta), tema escuro com tokens, responsivo
+- Páginas de auth (login, cadastro, recuperação) no design system
+
+✅ Conclusão: cadastro → verificação → login → shell; teste de integração provando que usuário A não lê dados do usuário B (RLS).
+
+### M2 · Corpus + pipeline de coleta (5–6 dias) — [C7 e base de tudo]
+Objetivo: dado um ID de canal, o corpus se popula sozinho, dentro do orçamento de cota. **É o milestone de maior risco técnico — por isso vem cedo.**
+
+Entregáveis:
+- Migrations do corpus global: `channels`, `videos`, `collection_jobs`, `quota_ledger` ([doc 5, §5.1/5.3](05-modelo-de-dados.md))
+- `lib/youtubeClient` tipado (channels, playlistItems, videos) com tratamento de erros/paginação
+- `quotaService`: token bucket diário com reserva prévia, prioridades e reserva estratégica de 15% ([doc 3, §3.4](03-estrategia-de-dados.md))
+- Pipeline Inngest `collectChannel`: resolver canal → coletar até 200 vídeos → gravar (upsert idempotente) — [doc 3, §3.5](03-estrategia-de-dados.md)
+- Política de frescor: cache ≤ 7 dias servido direto; recoleta incremental 7–30 dias ([doc 3, §3.3](03-estrategia-de-dados.md))
+
+✅ Conclusão: disparar coleta de 3 canais reais pelo painel do Inngest → corpus populado; segunda execução consome ~0 unidades (cache); `quota_ledger` bate com o consumo real do console Google; testes unitários do `quotaService`.
+
+### M3 · Motor de outliers + pesquisa progressiva (5–6 dias) — [C2, C3, C4, C5]
+Objetivo: o momento "uau" funcionando de ponta a ponta.
+
+Entregáveis:
+- `analysisService`: baselines por formato/faixa de idade (mediana), score por vídeo, flag de baixa confiança ([doc 3, §3.6](03-estrategia-de-dados.md)) — **com bateria completa de testes unitários** (é o coração do produto)
+- Migrations: `channel_baselines`, `searches`, `search_results`
+- Fluxo completo: `POST /api/searches` (Zod + limite transacional) → evento → pipeline → publicação progressiva
+- Tela Nova Pesquisa (campo inteligente: URL/@handle/nome + modo lista) e tela Resultados: cards com badge de score, explicação do destaque, Shorts/longos separados, progresso "X de Y", Realtime ([doc 6, §6.3/6.4](06-ux-ui.md))
+
+✅ Conclusão: pesquisar uma lista de 5 canais frios → primeiros cards < 15 s, lista completa < 3 min; pesquisa repetida → tudo < 2 s; scores conferidos manualmente contra planilha para 2 canais conhecidos.
+
+### M4 · Histórico + beta fechado (2–3 dias) — [C6] → **marco: Estágio C lançável**
+Entregáveis: tela Histórico (reabrir sem reprocessar), estados de erro/vazio/fila projetados no [doc 6, §6.5](06-ux-ui.md), Sentry ativo, seed de convites (acesso restrito por lista).
+
+✅ Conclusão: 10 usuários beta completam uma análise sem suporte; custo de cota por pesquisa medido e registrado no [doc 3](03-estrategia-de-dados.md); feedback coletado.
+
+---
+
+## Estágio B — Descoberta (milestones 5–6 · semanas 4–6)
+
+### M5 · Busca por keyword + nichos curados (5–6 dias) — [B1, B2]
+Entregáveis:
+- `search.list` no `youtubeClient` + racionamento por prioridade no `quotaService`
+- Migrations: `keyword_cache`, `keyword_results`, `niches` + seed de ≥ 20 nichos PT-BR (curadoria manual)
+- Cache de keyword 72 h ([doc 3, §3.2](03-estrategia-de-dados.md)); pipeline `runSearch` orquestrando keyword → canais → coleta
+- UI: modos keyword/nicho na Nova Pesquisa, grade de nichos, onboarding da primeira sessão ([doc 6, §6.2](06-ux-ui.md))
+
+✅ Conclusão: usuário novo chega a oportunidades a partir de um nicho em < 60 s (cache aquecido); keyword repetida por outro usuário custa 0 unidades; custo real por nicho frio registrado.
+
+### M6 · Relacionados, filtros e limites visíveis (4–5 dias) — [B3, B4, B5, B6] → **marco: Estágio B, lançamento público gratuito**
+Entregáveis:
+- `channel_niche_affinity` alimentada pelas coaparições + seção "canais relacionados"
+- Filtros e ordenação client-side com estado na URL (compartilhável)
+- `plans` + `usage_periods` + contador de uso na UI + paywall não-hostil (plano único `free` por ora)
+- Landing provisória mínima (1 seção, CTA de cadastro) — a definitiva vem no M9
+
+✅ Conclusão: funil completo instrumentado (cadastro → 1ª pesquisa → resultado → retorno); ativação ≥ 60% medida na primeira semana pública; limites do free aplicados transacionalmente (teste de corrida).
+
+---
+
+## Estágio A — Comercial (milestones 7–9 · semanas 7–9)
+
+### M7 · Billing Stripe (4–5 dias) — [A1, A2, A3]
+Entregáveis:
+- Produtos/preços no Stripe (Criador R$ 49 · Pro R$ 99); Checkout + Customer Portal
+- Webhooks com verificação de assinatura + idempotência → `subscriptions` ([doc 7, §7.4](07-monetizacao.md))
+- Enforcement dos três planos ([doc 7, §7.2/7.3](07-monetizacao.md)); ciclo past_due de 7 dias
+- Tela Conta: plano atual, uso, atalho ao Portal
+
+✅ Conclusão: assinatura de teste ponta a ponta (checkout → webhook → limites novos ativos → downgrade no portal → limites rebaixados no fim do ciclo simulado); payloads de webhook cobertos por testes de integração.
+
+### M8 · Favoritos + exportação (3–4 dias) — [A4, A5]
+Entregáveis: `favorites` + tela Minha Pauta; exportação CSV com carimbo de origem ([doc 7, §7.6](07-monetizacao.md)); ambos gated por plano.
+
+✅ Conclusão: favoritar → aparece na pauta → exportar CSV com todas as métricas; gratuito vê paywall correto nas duas features.
+
+### M9 · Landing definitiva + hardening + lançamento (5–6 dias) — [A6] → **marco: lançamento comercial**
+Entregáveis:
+- **Prompt para o Relume** (proposta de valor, público, seções do [doc 6, §6.7](06-ux-ui.md), direção visual do [DESIGN-ferrari.md](../DESIGN-ferrari.md)) → estrutura gerada → aplicação dos tokens na exportação/implementação
+- Termos de uso + política de privacidade; exclusão de conta self-service ([doc 8, §8.3](08-seguranca-e-operacao.md))
+- Rate limiting nas rotas públicas; alertas de cota e erro ([doc 8, §8.5](08-seguranca-e-operacao.md))
+- **Auditoria completa com a skill `security-audit`** + checklist pré-lançamento inteiro ([doc 8, §8.8](08-seguranca-e-operacao.md))
+- E2E Playwright: cadastro → pesquisa → favoritar → checkout de teste
+
+✅ Conclusão: checklist do doc 8 100% marcado; primeira assinatura real processada; lançamento.
+
+---
+
+## M10 · Pós-lançamento imediato (contínuo)
+Não é milestone de construção — é regime de operação: acompanhar métricas ([doc 1, §1.7](01-visao-de-produto.md) e [doc 7, §7.5](07-monetizacao.md)), triagem de feedback, ajuste de pricing com dados reais, pedido de aumento de cota ao Google quando a fila de prioridade 1–2 represar, e priorização do roadmap pós-MVP (Pix, anual, páginas SEO do corpus, IA).
+
+## Riscos de cronograma e válvulas de escape
+
+| Se... | Então... |
+|---|---|
+| M2/M3 estourarem (risco técnico maior) | M4 absorve o atraso; estágio C segue lançável só com análise por canal |
+| Estágio B atrasar | Lançar beta público só com análise de canal/lista (ainda é o "uau") e nichos vêm depois |
+| Stripe travar (conta/aprovação) | Lançar B público e manter lista de espera paga por 1–2 semanas |
+| Cota diária insuficiente já no beta | Reduzir profundidade de coleta (200 → 100 vídeos) e canais/pesquisa do free (5 → 3) — parâmetros, não refactor |
