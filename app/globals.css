@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens — fonte oficial: DESIGN-ferrari.md (raiz do repo).
+ * Regra: componentes usam somente tokens semânticos; nunca hex cru.
+ */
+@theme {
+  /* ---- Cores · superfícies ---- */
+  --color-canvas: #181818;
+  --color-canvas-elevated: #303030;
+  --color-canvas-light: #ffffff;
+  --color-surface-soft-light: #f7f7f7;
+  --color-surface-strong-light: #ebebeb;
+
+  /* ---- Cores · texto ---- */
+  --color-ink: #ffffff;
+  --color-body: #969696;
+  --color-body-on-light: #181818;
+  --color-muted: #666666;
+  --color-muted-soft: #8f8f8f;
+
+  /* ---- Cores · hairlines ---- */
+  --color-hairline: #303030;
+  --color-hairline-on-light: #d2d2d2;
+  --color-hairline-soft: #ebebeb;
+
+  /* ---- Cores · acento (usar com escassez) ---- */
+  --color-primary: #da291c;
+  --color-primary-active: #b01e0a;
+  --color-primary-hover: #9d2211;
+  --color-on-primary: #ffffff;
+  --color-focus-ring: #f6e500;
+
+  /* ---- Cores · semânticas ---- */
+  --color-info: #4c98b9;
+  --color-success: #03904a;
+  --color-warning: #f13a2c;
+
+  /* ---- Tipografia ---- */
+  --font-sans: var(--font-inter), -apple-system, system-ui, sans-serif;
+
+  --text-display-mega: 80px;
+  --text-display-mega--line-height: 1.05;
+  --text-display-mega--letter-spacing: -1.6px;
+  --text-display-mega--font-weight: 500;
+
+  --text-display-xl: 56px;
+  --text-display-xl--line-height: 1.1;
+  --text-display-xl--letter-spacing: -1.12px;
+  --text-display-xl--font-weight: 500;
+
+  --text-display-lg: 36px;
+  --text-display-lg--line-height: 1.2;
+  --text-display-lg--letter-spacing: -0.36px;
+  --text-display-lg--font-weight: 500;
+
+  --text-display-md: 26px;
+  --text-display-md--line-height: 1.5;
+  --text-display-md--letter-spacing: 0.195px;
+  --text-display-md--font-weight: 500;
+
+  --text-title-md: 18px;
+  --text-title-md--line-height: 1.2;
+  --text-title-md--font-weight: 700;
+
+  --text-title-sm: 16px;
+  --text-title-sm--line-height: 1.4;
+  --text-title-sm--letter-spacing: 0.08px;
+  --text-title-sm--font-weight: 500;
+
+  --text-body-md: 14px;
+  --text-body-md--line-height: 1.5;
+
+  --text-body-sm: 13px;
+  --text-body-sm--line-height: 1.5;
+
+  --text-caption: 12px;
+  --text-caption--line-height: 1.4;
+
+  --text-caption-upper: 11px;
+  --text-caption-upper--line-height: 1.4;
+  --text-caption-upper--letter-spacing: 1.1px;
+  --text-caption-upper--font-weight: 600;
+
+  --text-button-label: 14px;
+  --text-button-label--line-height: 1;
+  --text-button-label--letter-spacing: 1.4px;
+  --text-button-label--font-weight: 700;
+
+  --text-nav-link: 13px;
+  --text-nav-link--line-height: 1.4;
+  --text-nav-link--letter-spacing: 0.65px;
+  --text-nav-link--font-weight: 600;
+
+  /* ---- Espaçamento · escada nomeada de 8px ---- */
+  --spacing-xxxs: 4px;
+  --spacing-xxs: 8px;
+  --spacing-xs: 16px;
+  --spacing-sm: 24px;
+  --spacing-md: 32px;
+  --spacing-lg: 48px;
+  --spacing-xl: 64px;
+  --spacing-xxl: 96px;
+  --spacing-super: 128px;
+
+  /* ---- Raio · sharp por padrão ---- */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-body);
+  font-family: var(--font-sans);
+}
+
+/* Anel de foco global (amarelo do design system) */
+:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
