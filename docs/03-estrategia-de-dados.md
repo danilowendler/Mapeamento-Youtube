@@ -79,7 +79,7 @@ resolver entrada → (se keyword/nicho) search.list → lista de canais-alvo
 - **Publicação progressiva:** cada canal concluído grava seu resultado e o frontend recebe via Supabase Realtime — o usuário nunca espera o lote inteiro.
 - **Idempotência:** reprocessar uma etapa não duplica dados (upsert por ID do YouTube).
 - **Limites de paralelismo:** coleta de canais em paralelo controlado (evita rajadas contra a API e contra o Postgres).
-- **Profundidade de coleta:** até 200 vídeos mais recentes por canal no MVP (cobre ~2 anos da maioria dos canais ativos; configurável por plano no futuro).
+- **Profundidade de coleta (adaptativa desde o M4):** base de 200 vídeos mais recentes por canal (cobre ~2 anos da maioria dos canais ativos). Para canais de altíssima frequência de publicação (ex.: canais de cortes/lives com dezenas de uploads/dia), a *descoberta* pagina até 1.000 vídeos em busca de um mínimo de 50 vídeos elegíveis para baseline (≥ 14 dias), mas as *métricas* são buscadas só para os 200 mais recentes + os elegíveis (teto de 500) — profundidade sem desperdício de cota. Canal validado: CazéTV (~35 uploads/dia, 25 unidades, 71 vídeos com score).
 
 ## 3.6 Motor de outliers (o algoritmo)
 

@@ -1,4 +1,8 @@
 import { notFound } from "next/navigation";
+import {
+  ChannelChips,
+  type ChannelChip,
+} from "@/features/results/ChannelChips";
 import { ResultsView } from "@/features/results/ResultsView";
 import { SearchLive } from "@/features/results/SearchLive";
 import type { OpportunityCard } from "@/features/results/types";
@@ -21,7 +25,9 @@ export default async function ResultadosPage({
   // RLS garante que só o dono enxerga a pesquisa
   const { data: search } = await supabase
     .from("searches")
-    .select("id, status, channels_total, channels_done, created_at")
+    .select(
+      "id, status, channels_total, channels_done, created_at, failed_inputs",
+    )
     .eq("id", id)
     .maybeSingle();
   if (!search) notFound();
@@ -31,12 +37,19 @@ export default async function ResultadosPage({
     .select("channel_id, status, top_score")
     .eq("search_id", id);
 
+  const allChannelIds = (results ?? []).map((r) => r.channel_id);
   const readyChannelIds = (results ?? [])
     .filter((r) => r.status === "ready")
     .map((r) => r.channel_id);
 
   let cards: OpportunityCard[] = [];
-  if (readyChannelIds.length > 0) {
+  let channelById = new Map<
+    string,
+    { youtube_id: string; title: string; subscriber_count: number | null }
+  >();
+  const channelsWithBaselines = new Set<string>();
+
+  if (allChannelIds.length > 0) {
     const [videosRes, channelsRes, baselinesRes] = await Promise.all([
       supabase
         .from("videos")
@@ -50,16 +63,19 @@ export default async function ResultadosPage({
       supabase
         .from("channels")
         .select("youtube_id, title, subscriber_count")
-        .in("youtube_id", readyChannelIds),
+        .in("youtube_id", allChannelIds),
       supabase
         .from("channel_baselines")
         .select("channel_id, format, age_bucket, sample_size")
         .in("channel_id", readyChannelIds),
     ]);
 
-    const channelById = new Map(
+    channelById = new Map(
       (channelsRes.data ?? []).map((c) => [c.youtube_id, c]),
     );
+    for (const b of baselinesRes.data ?? []) {
+      channelsWithBaselines.add(b.channel_id);
+    }
     const sampleByKey = new Map(
       (baselinesRes.data ?? []).map((b) => [
         `${b.channel_id}|${b.format}|${b.age_bucket}`,
@@ -96,6 +112,21 @@ export default async function ResultadosPage({
     });
   }
 
+  const chips: ChannelChip[] = (results ?? []).map((result) => ({
+    channelId: result.channel_id,
+    title: channelById.get(result.channel_id)?.title ?? result.channel_id,
+    state:
+      result.status === "failed"
+        ? "failed"
+        : channelsWithBaselines.has(result.channel_id)
+          ? "ready"
+          : "no_eligible",
+    opportunities: cards.filter((c) => c.channelId === result.channel_id)
+      .length,
+  }));
+
+  const failedInputs = (search.failed_inputs ?? []) as string[];
+
   return (
     <div className="mx-auto flex max-w-[860px] flex-col gap-md pt-md">
       <header className="flex flex-col gap-xs">
@@ -108,6 +139,13 @@ export default async function ResultadosPage({
             channelsDone: search.channels_done,
           }}
         />
+        <ChannelChips chips={chips} />
+        {failedInputs.length > 0 && (
+          <p className="text-body-sm text-warning">
+            Não encontramos: {failedInputs.join(", ")} — confira se são URLs
+            ou @handles válidos.
+          </p>
+        )}
       </header>
 
       {search.status === "failed" ? (
