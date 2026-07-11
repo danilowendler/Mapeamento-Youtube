@@ -81,7 +81,7 @@ hooks/                # hooks client (useSearchProgress, useFilters)
 lib/                  # youtubeClient, stripeClient, supabase/, inngestClient
 utils/                # puros e sem dependência (formatadores, parsers)
 types/                # tipos de domínio compartilhados
-database/             # migrations, seed de nichos
+supabase/             # config do CLI, migrations, seed de nichos
 middleware.ts         # sessão/proteção de rotas
 styles/  public/
 ```

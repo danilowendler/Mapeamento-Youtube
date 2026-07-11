@@ -45,7 +45,7 @@ Medianas pré-calculadas por canal — evita recomputar em toda leitura.
 | computed_at | timestamptz | |
 
 ### `niches`
-Catálogo curado (seed versionado em `database/seeds`).
+Catálogo curado (seed versionado em `supabase/`).
 | Coluna | Tipo | Notas |
 |---|---|---|
 | id | uuid **PK** | |
@@ -126,7 +126,7 @@ Contadores de consumo por ciclo: (user_id, period_start) **PK composta**, period
 
 ## 5.5 Migrations e evolução
 
-- Migrations versionadas no repo (`database/migrations`), aplicadas via Supabase CLI; **nunca** alteração manual no dashboard em produção.
+- Migrations versionadas no repo (`supabase/migrations`), aplicadas via Supabase CLI; **nunca** alteração manual no dashboard em produção.
 - Seed de nichos versionado e idempotente.
 - Convenções: snake_case; timestamps `timestamptz` sempre; soft delete apenas onde houver requisito real (não há, no MVP); FKs com `on delete cascade` somente da zona de usuário (apagar conta limpa tudo do usuário — requisito LGPD, [doc 8](08-seguranca-e-operacao.md)).
 - O corpus **nunca** referencia dados de usuário — garante que exclusão de contas não toca o ativo global.
