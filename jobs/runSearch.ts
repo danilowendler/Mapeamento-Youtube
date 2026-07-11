@@ -116,8 +116,8 @@ async function bumpProgress(searchId: string, units: number): Promise<void> {
 
 /**
  * Falha de um canal que nem chegou a existir no corpus: não há
- * channel_id para search_results, então o erro fica só no progresso
- * (a UI mostra "N de M" e o status parcial ao final).
+ * channel_id para search_results, então a entrada vai para
+ * searches.failed_inputs — a UI lista o que não pôde ser analisado.
  */
 async function registerFailure(
   searchId: string,
@@ -125,4 +125,12 @@ async function registerFailure(
   message: string,
 ): Promise<void> {
   console.warn(`[run-search] ${searchId} · ${input}: ${message}`);
+  const db = createAdminClient();
+  const { error } = await db.rpc("append_failed_input", {
+    p_search_id: searchId,
+    p_input: input,
+  });
+  if (error) {
+    console.error(`append_failed_input: ${error.message}`);
+  }
 }

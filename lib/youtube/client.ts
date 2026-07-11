@@ -130,14 +130,19 @@ export async function getUploadsPage(
   if (pageToken) params.pageToken = pageToken;
 
   const data = await ytFetch<{
-    items?: { contentDetails?: { videoId?: string } }[];
+    items?: {
+      contentDetails?: { videoId?: string; videoPublishedAt?: string };
+    }[];
     nextPageToken?: string;
   }>("playlistItems", params);
 
   return {
-    videoIds: (data.items ?? [])
-      .map((item) => item.contentDetails?.videoId)
-      .filter((id): id is string => Boolean(id)),
+    items: (data.items ?? [])
+      .filter((item) => Boolean(item.contentDetails?.videoId))
+      .map((item) => ({
+        videoId: item.contentDetails!.videoId!,
+        publishedAt: item.contentDetails?.videoPublishedAt ?? null,
+      })),
     nextPageToken: data.nextPageToken ?? null,
   };
 }

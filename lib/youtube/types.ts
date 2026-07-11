@@ -27,7 +27,7 @@ export type YouTubeVideo = {
 };
 
 export type UploadsPage = {
-  videoIds: string[];
+  items: { videoId: string; publishedAt: string | null }[];
   nextPageToken: string | null;
 };
 

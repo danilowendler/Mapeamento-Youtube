@@ -37,7 +37,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isAppRoute = pathname.startsWith("/app");
+  const isAppRoute = pathname.startsWith("/app") || pathname === "/convite";
   const isAuthPage =
     pathname === "/login" ||
     pathname === "/cadastro" ||

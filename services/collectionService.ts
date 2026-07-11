@@ -11,10 +11,22 @@ import { parseChannelInput } from "@/utils/youtube";
 import { decideFreshness } from "./freshness";
 import { reserveQuota, type QuotaPriorityValue } from "./quotaService";
 
-/** Profundidade máxima de coleta por canal no MVP (doc 3 §3.5). */
-export const MAX_VIDEOS_PER_CHANNEL = 200;
+/**
+ * Profundidade de coleta (doc 3 §3.5, adaptativa desde o M4):
+ * a DESCOBERTA (playlistItems, 1 un/página) pagina até achar um
+ * mínimo de vídeos ELEGÍVEIS para baseline (≥ 14 dias), com teto de
+ * 20 páginas (1.000 vídeos). A BUSCA DE MÉTRICAS (videos.list) cobre
+ * só o que importa: os 200 mais recentes + os elegíveis, até 500.
+ * Canais de altíssima frequência (ex.: CazéTV, ~35 uploads/dia) têm
+ * centenas de vídeos "quentes demais" que não recebem score — pagar
+ * métricas deles seria cota desperdiçada.
+ */
+export const BASE_VIDEOS_PER_CHANNEL = 200;
+export const MAX_VIDEOS_FETCH = 500;
+export const MIN_ELIGIBLE_VIDEOS = 50;
+const MAX_DISCOVERY_PAGES = 20;
 const PAGE_SIZE = 50;
-const MAX_PAGES = MAX_VIDEOS_PER_CHANNEL / PAGE_SIZE;
+const ELIGIBLE_AGE_MS = 14 * 24 * 60 * 60 * 1000;
 
 export class ChannelNotFoundError extends Error {
   constructor(input: string) {
@@ -93,37 +105,59 @@ export async function collectChannel(
   const jobId = await startJob(channel.youtubeId, mode);
 
   try {
-    // 3 · IDs de vídeos: pagina a playlist de uploads (1 unidade/página).
+    // 3 · DESCOBERTA: pagina a playlist de uploads (1 unidade/página)
+    // até ter MIN_ELIGIBLE_VIDEOS elegíveis ou bater o teto de páginas.
     // No modo incremental, para na primeira página sem vídeos novos.
     const knownIds = await videoRepo.getKnownIds(channel.youtubeId);
     const discoveredIds: string[] = [];
+    const eligibleIds: string[] = [];
+    const eligibleCutoff = Date.now() - ELIGIBLE_AGE_MS;
     let pageToken: string | undefined;
 
-    for (let page = 0; page < MAX_PAGES; page += 1) {
+    const basePages = BASE_VIDEOS_PER_CHANNEL / PAGE_SIZE;
+
+    for (let page = 0; page < MAX_DISCOVERY_PAGES; page += 1) {
       await spend("playlistItems.list");
       const result = await getUploadsPage(
         channel.uploadsPlaylistId,
         pageToken,
       );
-      discoveredIds.push(...result.videoIds);
+      for (const item of result.items) {
+        discoveredIds.push(item.videoId);
+        if (
+          item.publishedAt &&
+          new Date(item.publishedAt).getTime() <= eligibleCutoff
+        ) {
+          eligibleIds.push(item.videoId);
+        }
+      }
 
       const pageHasOnlyKnown =
         mode === "incremental" &&
-        result.videoIds.every((id) => knownIds.has(id));
+        result.items.every((item) => knownIds.has(item.videoId));
+      const pastBaseDepth = page + 1 >= basePages;
+      const hasEnoughEligible = eligibleIds.length >= MIN_ELIGIBLE_VIDEOS;
+
       if (!result.nextPageToken || pageHasOnlyKnown) break;
+      if (pastBaseDepth && hasEnoughEligible) break;
       pageToken = result.nextPageToken;
     }
 
-    // 4 · Conjunto a buscar: novos + conhecidos (refresh de métricas)
-    const toFetch = new Set(discoveredIds);
+    // 4 · MÉTRICAS: só o que importa — 200 mais recentes (contexto e
+    // futuro frescor) + todos os elegíveis (matéria-prima do baseline)
+    // + conhecidos no modo incremental (refresh), até o teto de 500.
+    const toFetch = new Set([
+      ...discoveredIds.slice(0, BASE_VIDEOS_PER_CHANNEL),
+      ...eligibleIds,
+    ]);
     if (mode === "incremental") {
       const recentKnown = await videoRepo.getRecentIds(
         channel.youtubeId,
-        MAX_VIDEOS_PER_CHANNEL,
+        BASE_VIDEOS_PER_CHANNEL,
       );
       for (const id of recentKnown) toFetch.add(id);
     }
-    const ids = [...toFetch].slice(0, MAX_VIDEOS_PER_CHANNEL);
+    const ids = [...toFetch].slice(0, MAX_VIDEOS_FETCH);
 
     // 5 · Métricas em lotes de 50 (1 unidade/lote) + upsert idempotente
     let videosUpserted = 0;
