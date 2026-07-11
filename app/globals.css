@@ -122,3 +122,17 @@ body {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
+
+/* Barra de progresso indeterminada (varredura) */
+@keyframes progress-sweep {
+  from {
+    left: -33%;
+  }
+  to {
+    left: 100%;
+  }
+}
+
+@utility animate-progress-sweep {
+  animation: progress-sweep 1.2s ease-in-out infinite;
+}

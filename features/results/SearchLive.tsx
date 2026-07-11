@@ -53,8 +53,9 @@ export function SearchLive({ search }: { search: SearchSummary }) {
       )
       .subscribe();
 
-    // Fallback: Realtime pode perder eventos; um poll lento garante.
-    const interval = setInterval(refresh, 7000);
+    // Fallback: Realtime pode perder eventos; um poll curto garante
+    // que o progresso nunca pareça morto.
+    const interval = setInterval(refresh, 3000);
 
     return () => {
       supabase.removeChannel(channel);
@@ -82,15 +83,24 @@ export function SearchLive({ search }: { search: SearchSummary }) {
     <div className="flex flex-col gap-xxs" role="status" aria-live="polite">
       <div className="flex items-center justify-between text-body-sm text-body">
         <span>
-          Analisando canais… {search.channelsDone} de {search.channelsTotal}
+          {search.channelsDone === 0
+            ? "Coletando vídeos e calculando medianas…"
+            : `Analisando canais… ${search.channelsDone} de ${search.channelsTotal}`}
         </span>
-        <span className="tabular-nums">{pct}%</span>
+        <span className="tabular-nums">
+          {search.channelsDone > 0 ? `${pct}%` : ""}
+        </span>
       </div>
-      <div className="h-[3px] w-full bg-canvas-elevated">
-        <div
-          className="h-full bg-ink transition-all duration-500"
-          style={{ width: `${Math.max(pct, 4)}%` }}
-        />
+      <div className="relative h-[3px] w-full overflow-hidden bg-canvas-elevated">
+        {search.channelsDone === 0 ? (
+          // Indeterminada: a coleta está viva, só ainda sem frações
+          <div className="absolute inset-y-0 w-1/3 animate-progress-sweep bg-ink" />
+        ) : (
+          <div
+            className="h-full bg-ink transition-all duration-500"
+            style={{ width: `${Math.max(pct, 4)}%` }}
+          />
+        )}
       </div>
     </div>
   );

@@ -50,9 +50,19 @@ export type CollectionResult = {
  * Custos típicos: cache hit por ID = 0 unidades; canal frio de 200
  * vídeos ≈ 9 unidades; recoleta incremental ≈ 3–6 unidades.
  */
+export type CollectionHooks = {
+  /**
+   * Invocado assim que o canal é resolvido e marcado como
+   * "collecting" — permite ao caller publicar progresso parcial
+   * (ex.: chip "coletando…" via Realtime) antes da coleta terminar.
+   */
+  onResolved?: (channelId: string) => Promise<void>;
+};
+
 export async function collectChannel(
   input: string,
   priority: QuotaPriorityValue,
+  hooks: CollectionHooks = {},
 ): Promise<CollectionResult> {
   const parsed = parseChannelInput(input);
   if (!parsed) throw new ChannelNotFoundError(input);
@@ -102,6 +112,7 @@ export async function collectChannel(
     : "full";
 
   await channelRepo.upsertFromApi(channel, "collecting");
+  if (hooks.onResolved) await hooks.onResolved(channel.youtubeId);
   const jobId = await startJob(channel.youtubeId, mode);
 
   try {

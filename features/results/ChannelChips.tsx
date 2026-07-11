@@ -1,7 +1,7 @@
 export type ChannelChip = {
   channelId: string;
   title: string;
-  state: "ready" | "no_eligible" | "failed";
+  state: "collecting" | "ready" | "no_eligible" | "failed";
   opportunities: number;
 };
 
@@ -25,6 +25,9 @@ export function ChannelChips({ chips }: { chips: ChannelChip[] }) {
           }
         >
           <span className="text-ink">{chip.title}</span>
+          {chip.state === "collecting" && (
+            <span className="animate-pulse text-body">coletando…</span>
+          )}
           {chip.state === "ready" && (
             <span className="text-muted-soft">
               {chip.opportunities}{" "}

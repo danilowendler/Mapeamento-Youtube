@@ -118,9 +118,11 @@ export default async function ResultadosPage({
     state:
       result.status === "failed"
         ? "failed"
-        : channelsWithBaselines.has(result.channel_id)
-          ? "ready"
-          : "no_eligible",
+        : result.status !== "ready"
+          ? "collecting"
+          : channelsWithBaselines.has(result.channel_id)
+            ? "ready"
+            : "no_eligible",
     opportunities: cards.filter((c) => c.channelId === result.channel_id)
       .length,
   }));

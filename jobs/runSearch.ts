@@ -53,8 +53,18 @@ export const runSearch = inngest.createFunction(
     for (const [index, input] of inputs.entries()) {
       const ok = await step.run(`canal-${index}`, async () => {
         try {
-          // 1 · Coleta (ou cache hit) — custo controlado pela cota
-          const collection = await collectChannel(input, priority);
+          // 1 · Coleta (ou cache hit) — custo controlado pela cota.
+          // onResolved publica o chip "coletando…" imediatamente
+          // (Realtime), dando vida à tela antes do canal ficar pronto.
+          const collection = await collectChannel(input, priority, {
+            onResolved: async (channelId) => {
+              await db.from("search_results").upsert(
+                { search_id: searchId, channel_id: channelId,
+                  status: "collecting" },
+                { onConflict: "search_id,channel_id" },
+              );
+            },
+          });
 
           // 2 · Análise: baselines + scores no corpus
           const analysis = await applyChannelAnalysis(collection.channelId);
