@@ -58,10 +58,12 @@ Entregáveis:
 
 ✅ Conclusão: pesquisar uma lista de 5 canais frios → primeiros cards < 15 s, lista completa < 3 min; pesquisa repetida → tudo < 2 s; scores conferidos manualmente contra planilha para 2 canais conhecidos.
 
-### M4 · Histórico + beta fechado (2–3 dias) — [C6] → **marco: Estágio C lançável**
-Entregáveis: tela Histórico (reabrir sem reprocessar), estados de erro/vazio/fila projetados no [doc 6, §6.5](06-ux-ui.md), Sentry ativo, seed de convites (acesso restrito por lista), **criação do projeto Supabase de produção** (migrations aplicadas do zero + Vercel de produção apontando para ele).
+### M4 · Histórico + produção (2–3 dias) — [C6] → **marco: Estágio C lançável**
+Entregáveis: tela Histórico (reabrir sem reprocessar), estados de erro/vazio/fila projetados no [doc 6, §6.5](06-ux-ui.md), Sentry ativo, **criação do projeto Supabase de produção** (migrations aplicadas do zero + Vercel de produção apontando para ele).
 
-✅ Conclusão: 10 usuários beta completam uma análise sem suporte; custo de cota por pesquisa medido e registrado no [doc 3](03-estrategia-de-dados.md); feedback coletado.
+> **Decisão (11/07/2026):** o time de produto dispensou o beta fechado — lançamento vai direto ao público no fim do estágio B/A. A infraestrutura de convites (`beta_invites`, gate `BETA_INVITE_REQUIRED`) foi construída e fica **dormente** (variável desligada); pode ser ativada no futuro para early access sem nenhum desenvolvimento novo.
+
+✅ Conclusão: ambiente de produção no ar (Vercel + Supabase prod + Inngest), fluxo completo validado em produção pelo fundador; custo de cota por pesquisa medido e registrado no [doc 3](03-estrategia-de-dados.md).
 
 ---
 
