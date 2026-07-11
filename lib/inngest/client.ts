@@ -15,4 +15,14 @@ export const channelCollectEvent = eventType("corpus/channel.collect", {
   }),
 });
 
+/** Evento: executar uma pesquisa criada (coleta + análise progressivas). */
+export const searchRunEvent = eventType("search/run.requested", {
+  schema: z.object({
+    searchId: z.string().uuid(),
+    priority: z
+      .union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)])
+      .optional(),
+  }),
+});
+
 export const inngest = new Inngest({ id: "mapeamento-inteligente" });

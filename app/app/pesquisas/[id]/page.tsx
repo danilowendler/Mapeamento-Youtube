@@ -1,0 +1,129 @@
+import { notFound } from "next/navigation";
+import { ResultsView } from "@/features/results/ResultsView";
+import { SearchLive } from "@/features/results/SearchLive";
+import type { OpportunityCard } from "@/features/results/types";
+import { createClient } from "@/lib/supabase/server";
+import { MIN_BUCKET_SAMPLE } from "@/services/outliers";
+
+export const metadata = { title: "Resultados · Mapeamento Inteligente" };
+
+/** Score mínimo para um vídeo ser uma oportunidade (doc 3 §3.6). */
+const MIN_OPPORTUNITY_SCORE = 3;
+
+export default async function ResultadosPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  // RLS garante que só o dono enxerga a pesquisa
+  const { data: search } = await supabase
+    .from("searches")
+    .select("id, status, channels_total, channels_done, created_at")
+    .eq("id", id)
+    .maybeSingle();
+  if (!search) notFound();
+
+  const { data: results } = await supabase
+    .from("search_results")
+    .select("channel_id, status, top_score")
+    .eq("search_id", id);
+
+  const readyChannelIds = (results ?? [])
+    .filter((r) => r.status === "ready")
+    .map((r) => r.channel_id);
+
+  let cards: OpportunityCard[] = [];
+  if (readyChannelIds.length > 0) {
+    const [videosRes, channelsRes, baselinesRes] = await Promise.all([
+      supabase
+        .from("videos")
+        .select(
+          "youtube_id, channel_id, title, thumbnail_url, is_short, duration_seconds, published_at, view_count, score, baseline_views, age_bucket",
+        )
+        .in("channel_id", readyChannelIds)
+        .gte("score", MIN_OPPORTUNITY_SCORE)
+        .order("score", { ascending: false })
+        .limit(200),
+      supabase
+        .from("channels")
+        .select("youtube_id, title, subscriber_count")
+        .in("youtube_id", readyChannelIds),
+      supabase
+        .from("channel_baselines")
+        .select("channel_id, format, age_bucket, sample_size")
+        .in("channel_id", readyChannelIds),
+    ]);
+
+    const channelById = new Map(
+      (channelsRes.data ?? []).map((c) => [c.youtube_id, c]),
+    );
+    const sampleByKey = new Map(
+      (baselinesRes.data ?? []).map((b) => [
+        `${b.channel_id}|${b.format}|${b.age_bucket}`,
+        b.sample_size,
+      ]),
+    );
+
+    cards = (videosRes.data ?? []).map((video) => {
+      const channel = channelById.get(video.channel_id);
+      const format = video.is_short ? "short" : "long";
+      const bucketSample =
+        sampleByKey.get(`${video.channel_id}|${format}|${video.age_bucket}`) ??
+        0;
+      const sampleUsed =
+        bucketSample >= MIN_BUCKET_SAMPLE
+          ? bucketSample
+          : (sampleByKey.get(`${video.channel_id}|${format}|all`) ?? 0);
+
+      return {
+        videoId: video.youtube_id,
+        title: video.title,
+        thumbnailUrl: video.thumbnail_url,
+        isShort: video.is_short,
+        durationSeconds: video.duration_seconds,
+        publishedAt: video.published_at,
+        viewCount: video.view_count,
+        score: Number(video.score),
+        baselineViews: video.baseline_views,
+        lowConfidence: sampleUsed < MIN_BUCKET_SAMPLE,
+        channelId: video.channel_id,
+        channelTitle: channel?.title ?? "—",
+        channelSubscribers: channel?.subscriber_count ?? null,
+      };
+    });
+  }
+
+  return (
+    <div className="mx-auto flex max-w-[860px] flex-col gap-md pt-md">
+      <header className="flex flex-col gap-xs">
+        <h1 className="text-display-md text-ink">Oportunidades</h1>
+        <SearchLive
+          search={{
+            id: search.id,
+            status: search.status,
+            channelsTotal: search.channels_total,
+            channelsDone: search.channels_done,
+          }}
+        />
+      </header>
+
+      {search.status === "failed" ? (
+        <p className="border border-warning/40 p-sm text-body-md text-warning">
+          Não conseguimos analisar nenhum dos canais informados. Verifique as
+          entradas e tente novamente.
+        </p>
+      ) : cards.length === 0 && search.status !== "running" &&
+        search.status !== "queued" ? (
+        <p className="border border-dashed border-hairline p-sm text-body-md text-body">
+          Nenhum vídeo com {MIN_OPPORTUNITY_SCORE}× ou mais acima da mediana —
+          os vídeos destes canais performam de forma uniforme.
+        </p>
+      ) : (
+        <ResultsView cards={cards} />
+      )}
+    </div>
+  );
+}
