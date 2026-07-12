@@ -28,43 +28,47 @@ export async function findRelatedChannels(
   const keywords = [...new Set((keywordRows ?? []).map((r) => r.keyword))];
   if (keywords.length === 0) return [];
 
-  // 2 · Outros canais nessas keywords, pontuados por coaparição
+  // 2 · Outros canais nessas keywords, pontuados por coaparição.
+  // O título vem do próprio resultado da busca — canais relacionados
+  // tipicamente ainda NÃO estão no corpus (serão coletados só se o
+  // usuário mandar mapeá-los).
   const { data: coRows } = await db
     .from("keyword_results")
-    .select("channel_id, keyword")
+    .select("channel_id, channel_title, keyword")
     .in("keyword", keywords);
 
   const exclude = new Set(channelIds);
-  const counts = new Map<string, number>();
+  const counts = new Map<string, { count: number; title: string }>();
   for (const row of coRows ?? []) {
     if (exclude.has(row.channel_id)) continue;
-    counts.set(row.channel_id, (counts.get(row.channel_id) ?? 0) + 1);
+    const entry = counts.get(row.channel_id) ?? { count: 0, title: "" };
+    entry.count += 1;
+    if (row.channel_title) entry.title = row.channel_title;
+    counts.set(row.channel_id, entry);
   }
 
   const top = [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
+    .filter(([, entry]) => entry.title !== "")
+    .sort((a, b) => b[1].count - a[1].count)
     .slice(0, limit);
   if (top.length === 0) return [];
 
-  // 3 · Metadados dos canais já conhecidos pelo corpus
+  // 3 · Enriquece com inscritos quando o canal já está no corpus
   const { data: channels } = await db
     .from("channels")
-    .select("youtube_id, title, subscriber_count")
+    .select("youtube_id, subscriber_count")
     .in(
       "youtube_id",
       top.map(([id]) => id),
     );
-  const byId = new Map((channels ?? []).map((c) => [c.youtube_id, c]));
+  const subsById = new Map(
+    (channels ?? []).map((c) => [c.youtube_id, c.subscriber_count]),
+  );
 
-  return top
-    .map(([channelId, coappearances]) => {
-      const channel = byId.get(channelId);
-      return {
-        channelId,
-        title: channel?.title ?? "",
-        subscriberCount: channel?.subscriber_count ?? null,
-        coappearances,
-      };
-    })
-    .filter((c) => c.title !== "");
+  return top.map(([channelId, entry]) => ({
+    channelId,
+    title: entry.title,
+    subscriberCount: subsById.get(channelId) ?? null,
+    coappearances: entry.count,
+  }));
 }

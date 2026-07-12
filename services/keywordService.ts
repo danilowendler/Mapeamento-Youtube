@@ -68,6 +68,7 @@ export async function resolveKeywordChannels(
         keyword,
         position: index,
         channel_id: hit.channelId,
+        channel_title: hit.channelTitle,
         video_id: hit.videoId,
       })),
     );
