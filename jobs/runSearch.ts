@@ -11,6 +11,7 @@ import {
   resolveKeywordChannels,
   resolveNicheChannels,
 } from "@/services/keywordService";
+import { getPlanLimitsForUser } from "@/services/planService";
 import type { QuotaPriorityValue } from "@/services/quotaService";
 
 /**
@@ -37,7 +38,7 @@ export const runSearch = inngest.createFunction(
     const search = await step.run("carregar-pesquisa", async () => {
       const { data, error } = await db
         .from("searches")
-        .select("id, status, type, input")
+        .select("id, status, type, input, user_id")
         .eq("id", searchId)
         .single();
       if (error || !data) {
@@ -59,14 +60,23 @@ export const runSearch = inngest.createFunction(
         nicheSlug?: string;
       };
 
+      // Limite de canais por pesquisa vem do plano (ADR-006)
+      const limits = await getPlanLimitsForUser(search.user_id);
+      const maxChannels = Math.min(
+        MAX_CHANNELS_PER_KEYWORD,
+        limits.channels_per_search,
+      );
+
       let channelIds: string[];
       if (search.type === "keyword" && input.keyword) {
-        channelIds = await resolveKeywordChannels(input.keyword, priority);
+        channelIds = (
+          await resolveKeywordChannels(input.keyword, priority)
+        ).slice(0, maxChannels);
       } else if (search.type === "niche" && input.nicheSlug) {
         const resolved = await resolveNicheChannels(
           input.nicheSlug,
           priority,
-          MAX_CHANNELS_PER_KEYWORD,
+          maxChannels,
         );
         channelIds = resolved.channelIds;
       } else {
@@ -151,6 +161,12 @@ export const runSearch = inngest.createFunction(
         .update({ status, completed_at: new Date().toISOString() })
         .eq("id", searchId);
       if (error) throw new Error(`searches.finalize: ${error.message}`);
+
+      await db.from("product_events").insert({
+        user_id: search.user_id,
+        name: "search_completed",
+        properties: { search_id: searchId, status, channels: inputs.length },
+      });
       return status;
     });
   },

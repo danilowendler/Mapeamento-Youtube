@@ -95,7 +95,7 @@ export async function resolveNicheChannels(
   const db = createAdminClient();
   const { data: niche, error } = await db
     .from("niches")
-    .select("name, keywords, is_active")
+    .select("id, name, keywords, is_active")
     .eq("slug", slug)
     .single();
   if (error || !niche || !niche.is_active) {
@@ -119,9 +119,27 @@ export async function resolveNicheChannels(
     }
   }
 
+  const channelIds = distinctChannels(merged, maxChannels);
+
+  // Alimenta a malha de afinidade canal↔nicho (doc 5 §5.1) — é ela
+  // que torna "canais relacionados" cada vez melhor com o uso.
+  // Nota: os canais podem ainda não existir em channels (a coleta vem
+  // depois); a FK exige presença, então registra só os já conhecidos
+  // e o pipeline completa a malha nas próximas pesquisas do nicho.
+  const { data: known } = await db
+    .from("channels")
+    .select("youtube_id")
+    .in("youtube_id", channelIds);
+  for (const row of known ?? []) {
+    await db.rpc("bump_channel_niche_affinity", {
+      p_channel_id: row.youtube_id,
+      p_niche_id: niche.id,
+    });
+  }
+
   return {
     nicheName: niche.name,
-    channelIds: distinctChannels(merged, maxChannels),
+    channelIds,
   };
 }
 

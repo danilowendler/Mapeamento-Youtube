@@ -2,11 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { parseChannelInput } from "@/utils/youtube";
 import { normalizeKeyword } from "./keywordService";
+import { getPlanLimits } from "./planService";
 
-/**
- * Limite fixo do MVP pré-planos. No M7 este valor passa a vir de
- * plans.limits com contagem transacional em usage_periods (ADR-006).
- */
+/** Teto absoluto do schema; o limite efetivo vem do plano (ADR-006). */
 export const BETA_MAX_CHANNELS_PER_SEARCH = 20;
 
 export const createSearchSchema = z.union([
@@ -43,6 +41,16 @@ export class InvalidChannelInputError extends Error {
   }
 }
 
+export class PlanLimitError extends Error {
+  constructor(
+    public readonly kind: "searches" | "channels",
+    message: string,
+  ) {
+    super(message);
+    this.name = "PlanLimitError";
+  }
+}
+
 /**
  * Cria a pesquisa em nome do usuário (cliente com RLS — o insert só
  * passa se user_id = auth.uid()). O disparo do pipeline é do caller.
@@ -52,6 +60,8 @@ export async function createSearch(
   userId: string,
   input: CreateSearchInput,
 ): Promise<{ searchId: string }> {
+  const limits = await getPlanLimits(supabase);
+
   let row: {
     type: string;
     input: Record<string, unknown>;
@@ -69,6 +79,12 @@ export async function createSearch(
     if (invalid.length > 0) throw new InvalidChannelInputError(invalid);
 
     const unique = [...new Set(normalized)];
+    if (unique.length > limits.channels_per_search) {
+      throw new PlanLimitError(
+        "channels",
+        `Seu plano permite ${limits.channels_per_search} canais por pesquisa.`,
+      );
+    }
     row = {
       type: unique.length === 1 ? "channel" : "channel_list",
       input: { channels: unique },
@@ -93,6 +109,21 @@ export async function createSearch(
       input: { nicheSlug: niche.slug, nicheName: niche.name },
       channels_total: 0,
     };
+  }
+
+  // Consumo transacional do crédito (ADR-006): imune a corrida —
+  // N requisições paralelas consomem no máximo o limite do plano.
+  const { data: remaining, error: consumeError } = await supabase.rpc(
+    "try_consume_search",
+  );
+  if (consumeError) {
+    throw new Error(`try_consume_search: ${consumeError.message}`);
+  }
+  if (remaining === -1) {
+    throw new PlanLimitError(
+      "searches",
+      "Você usou todas as pesquisas do seu plano neste mês.",
+    );
   }
 
   const { data, error } = await supabase
