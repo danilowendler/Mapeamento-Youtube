@@ -1,23 +1,38 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { parseChannelInput } from "@/utils/youtube";
+import { normalizeKeyword } from "./keywordService";
 
 /**
- * Limite fixo do beta fechado (estágio C). No M6/M7 este valor passa
- * a vir de plans.limits com contagem transacional em usage_periods
- * (ADR-006) — o TODO está registrado no plano (doc 09).
+ * Limite fixo do MVP pré-planos. No M7 este valor passa a vir de
+ * plans.limits com contagem transacional em usage_periods (ADR-006).
  */
 export const BETA_MAX_CHANNELS_PER_SEARCH = 20;
 
-export const createSearchSchema = z.object({
-  inputs: z
-    .array(z.string().trim().min(2, "Entrada muito curta."))
-    .min(1, "Informe pelo menos um canal.")
-    .max(
-      BETA_MAX_CHANNELS_PER_SEARCH,
-      `Máximo de ${BETA_MAX_CHANNELS_PER_SEARCH} canais por pesquisa no beta.`,
-    ),
-});
+export const createSearchSchema = z.union([
+  z.object({
+    mode: z.literal("channels"),
+    inputs: z
+      .array(z.string().trim().min(2, "Entrada muito curta."))
+      .min(1, "Informe pelo menos um canal.")
+      .max(
+        BETA_MAX_CHANNELS_PER_SEARCH,
+        `Máximo de ${BETA_MAX_CHANNELS_PER_SEARCH} canais por pesquisa.`,
+      ),
+  }),
+  z.object({
+    mode: z.literal("keyword"),
+    keyword: z
+      .string()
+      .trim()
+      .min(2, "Palavra-chave muito curta.")
+      .max(80, "Palavra-chave muito longa."),
+  }),
+  z.object({
+    mode: z.literal("niche"),
+    nicheSlug: z.string().trim().min(2),
+  }),
+]);
 
 export type CreateSearchInput = z.infer<typeof createSearchSchema>;
 
@@ -30,40 +45,62 @@ export class InvalidChannelInputError extends Error {
 
 /**
  * Cria a pesquisa em nome do usuário (cliente com RLS — o insert só
- * passa se user_id = auth.uid()). O disparo do pipeline é feito pelo
- * caller (rota), que tem acesso ao cliente Inngest.
+ * passa se user_id = auth.uid()). O disparo do pipeline é do caller.
  */
 export async function createSearch(
   supabase: SupabaseClient,
   userId: string,
   input: CreateSearchInput,
-): Promise<{ searchId: string; inputs: string[] }> {
-  // Valida cada entrada; nomes livres ainda não são suportados (M5)
-  const invalid: string[] = [];
-  const normalized: string[] = [];
-  for (const raw of input.inputs) {
-    const parsed = parseChannelInput(raw);
-    if (!parsed || parsed.kind === "name") {
-      invalid.push(raw);
-    } else {
-      normalized.push(raw.trim());
+): Promise<{ searchId: string }> {
+  let row: {
+    type: string;
+    input: Record<string, unknown>;
+    channels_total: number;
+  };
+
+  if (input.mode === "channels") {
+    const invalid: string[] = [];
+    const normalized: string[] = [];
+    for (const raw of input.inputs) {
+      const parsed = parseChannelInput(raw);
+      if (!parsed || parsed.kind === "name") invalid.push(raw);
+      else normalized.push(raw.trim());
     }
-  }
-  if (invalid.length > 0) throw new InvalidChannelInputError(invalid);
+    if (invalid.length > 0) throw new InvalidChannelInputError(invalid);
 
-  const unique = [...new Set(normalized)];
-
-  const { data, error } = await supabase
-    .from("searches")
-    .insert({
-      user_id: userId,
+    const unique = [...new Set(normalized)];
+    row = {
       type: unique.length === 1 ? "channel" : "channel_list",
       input: { channels: unique },
       channels_total: unique.length,
-    })
+    };
+  } else if (input.mode === "keyword") {
+    row = {
+      type: "keyword",
+      input: { keyword: normalizeKeyword(input.keyword) },
+      channels_total: 0, // definido pelo pipeline após o search.list
+    };
+  } else {
+    // Valida o nicho e captura o nome para exibição no histórico
+    const { data: niche } = await supabase
+      .from("niches")
+      .select("slug, name")
+      .eq("slug", input.nicheSlug)
+      .maybeSingle();
+    if (!niche) throw new Error(`Nicho não encontrado: ${input.nicheSlug}`);
+    row = {
+      type: "niche",
+      input: { nicheSlug: niche.slug, nicheName: niche.name },
+      channels_total: 0,
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("searches")
+    .insert({ user_id: userId, ...row })
     .select("id")
     .single();
   if (error) throw new Error(`searches.insert: ${error.message}`);
 
-  return { searchId: data.id, inputs: unique };
+  return { searchId: data.id };
 }

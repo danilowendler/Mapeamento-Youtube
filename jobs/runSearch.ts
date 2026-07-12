@@ -6,6 +6,11 @@ import {
   ChannelNotFoundError,
   collectChannel,
 } from "@/services/collectionService";
+import {
+  MAX_CHANNELS_PER_KEYWORD,
+  resolveKeywordChannels,
+  resolveNicheChannels,
+} from "@/services/keywordService";
 import type { QuotaPriorityValue } from "@/services/quotaService";
 
 /**
@@ -32,7 +37,7 @@ export const runSearch = inngest.createFunction(
     const search = await step.run("carregar-pesquisa", async () => {
       const { data, error } = await db
         .from("searches")
-        .select("id, status, input")
+        .select("id, status, type, input")
         .eq("id", searchId)
         .single();
       if (error || !data) {
@@ -45,8 +50,45 @@ export const runSearch = inngest.createFunction(
       return data;
     });
 
-    const inputs: string[] =
-      (search.input as { channels?: string[] }).channels ?? [];
+    // Fase de resolução: keyword/nicho viram uma lista de canais
+    // (cache de 72 h primeiro; search.list de 100 un só quando frio).
+    const inputs: string[] = await step.run("resolver-tema", async () => {
+      const input = search.input as {
+        channels?: string[];
+        keyword?: string;
+        nicheSlug?: string;
+      };
+
+      let channelIds: string[];
+      if (search.type === "keyword" && input.keyword) {
+        channelIds = await resolveKeywordChannels(input.keyword, priority);
+      } else if (search.type === "niche" && input.nicheSlug) {
+        const resolved = await resolveNicheChannels(
+          input.nicheSlug,
+          priority,
+          MAX_CHANNELS_PER_KEYWORD,
+        );
+        channelIds = resolved.channelIds;
+      } else {
+        return input.channels ?? [];
+      }
+
+      await db
+        .from("searches")
+        .update({ channels_total: channelIds.length })
+        .eq("id", searchId);
+      return channelIds;
+    });
+
+    if (inputs.length === 0) {
+      await step.run("finalizar-vazio", async () => {
+        await db
+          .from("searches")
+          .update({ status: "failed", completed_at: new Date().toISOString() })
+          .eq("id", searchId);
+      });
+      return;
+    }
 
     let failed = 0;
 

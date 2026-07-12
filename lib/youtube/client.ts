@@ -147,6 +147,44 @@ export async function getUploadsPage(
   };
 }
 
+export type SearchHit = {
+  videoId: string;
+  channelId: string;
+  channelTitle: string;
+};
+
+/**
+ * search.list — CUSTA 100 UNIDADES. Uso exclusivo do keywordService,
+ * que cacheia por 72 h (doc 3 §3.7). Busca vídeos (não canais): os
+ * canais que rankeiam para a keyword SÃO os canais do tema.
+ */
+export async function searchVideosByKeyword(
+  query: string,
+): Promise<SearchHit[]> {
+  const data = await ytFetch<{
+    items?: {
+      id?: { videoId?: string };
+      snippet?: { channelId?: string; channelTitle?: string };
+    }[];
+  }>("search", {
+    part: "snippet",
+    q: query,
+    type: "video",
+    maxResults: "50",
+    regionCode: "BR",
+    relevanceLanguage: "pt",
+    order: "relevance",
+  });
+
+  return (data.items ?? [])
+    .filter((item) => item.id?.videoId && item.snippet?.channelId)
+    .map((item) => ({
+      videoId: item.id!.videoId!,
+      channelId: item.snippet!.channelId!,
+      channelTitle: item.snippet?.channelTitle ?? "",
+    }));
+}
+
 type VideoResource = {
   id: string;
   snippet?: {

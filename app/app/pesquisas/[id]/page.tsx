@@ -26,11 +26,21 @@ export default async function ResultadosPage({
   const { data: search } = await supabase
     .from("searches")
     .select(
-      "id, status, channels_total, channels_done, created_at, failed_inputs",
+      "id, status, channels_total, channels_done, created_at, failed_inputs, input",
     )
     .eq("id", id)
     .maybeSingle();
   if (!search) notFound();
+
+  const searchInput = search.input as {
+    keyword?: string;
+    nicheName?: string;
+  };
+  const subtitle = searchInput.nicheName
+    ? `Nicho: ${searchInput.nicheName}`
+    : searchInput.keyword
+      ? `Tema: “${searchInput.keyword}”`
+      : null;
 
   const { data: results } = await supabase
     .from("search_results")
@@ -132,7 +142,10 @@ export default async function ResultadosPage({
   return (
     <div className="mx-auto flex max-w-[860px] flex-col gap-md pt-md">
       <header className="flex flex-col gap-xs">
-        <h1 className="text-display-md text-ink">Oportunidades</h1>
+        <div className="flex flex-col gap-xxxs">
+          <h1 className="text-display-md text-ink">Oportunidades</h1>
+          {subtitle && <p className="text-body-sm text-body">{subtitle}</p>}
+        </div>
         <SearchLive
           search={{
             id: search.id,
