@@ -7,8 +7,10 @@ import { RelatedChannels } from "@/features/results/RelatedChannels";
 import { ResultsView } from "@/features/results/ResultsView";
 import { SearchLive } from "@/features/results/SearchLive";
 import type { OpportunityCard } from "@/features/results/types";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { MIN_BUCKET_SAMPLE } from "@/services/outliers";
+import { getPlanLimits } from "@/services/planService";
 import { findRelatedChannels } from "@/services/relatedService";
 
 export const metadata = { title: "Resultados · Mapeamento Inteligente" };
@@ -23,6 +25,7 @@ export default async function ResultadosPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const limits = await getPlanLimits(supabase);
 
   // RLS garante que só o dono enxerga a pesquisa
   const { data: search } = await supabase
@@ -148,12 +151,45 @@ export default async function ResultadosPage({
       ? await findRelatedChannels(readyChannelIds)
       : [];
 
+  // Favoritos do usuário entre os vídeos exibidos (RLS filtra por dono)
+  const { data: favoriteRows } =
+    cards.length > 0
+      ? await supabase
+          .from("favorites")
+          .select("video_id")
+          .in(
+            "video_id",
+            cards.map((card) => card.videoId),
+          )
+      : { data: [] };
+  const favoritedIds = (favoriteRows ?? []).map((row) => row.video_id);
+
   return (
     <div className="mx-auto flex max-w-[860px] flex-col gap-md pt-md">
       <header className="flex flex-col gap-xs">
-        <div className="flex flex-col gap-xxxs">
-          <h1 className="text-display-md text-ink">Oportunidades</h1>
-          {subtitle && <p className="text-body-sm text-body">{subtitle}</p>}
+        <div className="flex items-start justify-between gap-xs">
+          <div className="flex flex-col gap-xxxs">
+            <h1 className="text-display-md text-ink">Oportunidades</h1>
+            {subtitle && <p className="text-body-sm text-body">{subtitle}</p>}
+          </div>
+          {isDone && cards.length > 0 && (
+            limits.export ? (
+              <a
+                href={`/api/searches/${search.id}/export`}
+                className="inline-flex h-[36px] shrink-0 items-center border border-ink px-xs text-caption-upper uppercase text-ink"
+              >
+                Exportar CSV
+              </a>
+            ) : (
+              <Link
+                href="/app/conta#planos"
+                title="Exportação disponível nos planos Criador e Pro"
+                className="inline-flex h-[36px] shrink-0 items-center gap-xxxs border border-hairline px-xs text-caption-upper uppercase text-muted-soft hover:text-body"
+              >
+                Exportar CSV · planos pagos
+              </Link>
+            )
+          )}
         </div>
         <SearchLive
           search={{
@@ -184,7 +220,11 @@ export default async function ResultadosPage({
           os vídeos destes canais performam de forma uniforme.
         </p>
       ) : (
-        <ResultsView cards={cards} />
+        <ResultsView
+          cards={cards}
+          favoritedIds={favoritedIds}
+          searchId={search.id}
+        />
       )}
 
       <RelatedChannels related={related} />

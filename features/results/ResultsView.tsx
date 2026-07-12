@@ -21,7 +21,16 @@ const SUBS_RANGES: Record<string, (subs: number | null) => boolean> = {
  * Resultados com filtros e ordenação client-side, estado na URL
  * (compartilhável — doc 6 §6.4). Formatos nunca se misturam.
  */
-export function ResultsView({ cards }: { cards: OpportunityCard[] }) {
+export function ResultsView({
+  cards,
+  favoritedIds = [],
+  searchId,
+}: {
+  cards: OpportunityCard[];
+  favoritedIds?: string[];
+  searchId?: string;
+}) {
+  const favoritedSet = useMemo(() => new Set(favoritedIds), [favoritedIds]);
   const router = useRouter();
   const params = useSearchParams();
 
@@ -180,7 +189,11 @@ export function ResultsView({ cards }: { cards: OpportunityCard[] }) {
         <ul className="flex flex-col gap-xs">
           {visible.map((card) => (
             <li key={card.videoId}>
-              <VideoCard card={card} />
+              <VideoCard
+                card={card}
+                favorited={favoritedSet.has(card.videoId)}
+                searchId={searchId}
+              />
             </li>
           ))}
         </ul>
