@@ -110,7 +110,7 @@ export function SearchForm({ niches }: { niches: NicheOption[] }) {
             Escolha um nicho e receba as oportunidades dos canais que
             dominam o tema.
           </p>
-          <ul className="grid grid-cols-2 gap-xxs md:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-xxs sm:grid-cols-2 md:grid-cols-3">
             {niches.map((niche) => (
               <li key={niche.slug}>
                 <button
@@ -118,10 +118,22 @@ export function SearchForm({ niches }: { niches: NicheOption[] }) {
                     submit({ mode: "niche", nicheSlug: niche.slug }, niche.slug)
                   }
                   disabled={Boolean(submitting)}
-                  title={niche.description ?? undefined}
-                  className="w-full cursor-pointer border border-hairline px-xs py-xs text-left text-title-sm text-ink transition-colors hover:border-muted disabled:opacity-50"
+                  className="group flex h-full w-full cursor-pointer flex-col gap-xxxs border border-hairline px-xs py-xs text-left transition-colors hover:border-muted hover:bg-canvas-elevated/25 disabled:opacity-50"
                 >
-                  {submitting === niche.slug ? "Iniciando…" : niche.name}
+                  <span className="flex w-full items-center justify-between text-title-sm text-ink">
+                    {submitting === niche.slug ? "Iniciando…" : niche.name}
+                    <span
+                      aria-hidden="true"
+                      className="text-muted opacity-0 transition-opacity group-hover:opacity-100"
+                    >
+                      →
+                    </span>
+                  </span>
+                  {niche.description && (
+                    <span className="line-clamp-2 text-caption text-muted">
+                      {niche.description}
+                    </span>
+                  )}
                 </button>
               </li>
             ))}

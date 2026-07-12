@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AppNav } from "@/features/shell/AppNav";
+import { AppNavMobile, AppNavSidebar } from "@/features/shell/AppNav";
 import { createClient } from "@/lib/supabase/server";
+import { getEffectivePlan } from "@/services/planService";
 
 export default async function AppLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // Gate do beta fechado (ativado por env — doc 09, M4)
+  const supabase = await createClient();
+
+  // Gate do beta fechado (dormente — decisão de 11/07/2026)
   if (process.env.BETA_INVITE_REQUIRED === "1") {
-    const supabase = await createClient();
     const { data: profile } = await supabase
       .from("profiles")
       .select("beta_access")
@@ -16,19 +18,66 @@ export default async function AppLayout({
     if (!profile?.beta_access) redirect("/convite");
   }
 
+  const [{ data: profile }, plan] = await Promise.all([
+    supabase.from("profiles").select("display_name").single(),
+    getEffectivePlan(supabase),
+  ]);
+  const name = profile?.display_name ?? "Criador";
+  const initial = name.trim().charAt(0).toUpperCase() || "•";
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="flex h-[64px] items-center border-b border-hairline px-xs md:px-md">
-        <Link href="/app" className="text-title-md text-ink">
-          Mapeamento Inteligente
+    <div className="flex min-h-screen">
+      {/* Sidebar (desktop) — identidade, navegação e quem sou eu */}
+      <aside className="sticky top-0 hidden h-screen w-[232px] shrink-0 flex-col border-r border-hairline md:flex">
+        <Link
+          href="/app"
+          className="flex h-[64px] items-center border-b border-hairline px-sm"
+        >
+          <span className="text-title-sm font-bold uppercase tracking-widest text-ink">
+            Mapeamento
+            <span className="block text-caption-upper font-semibold text-muted-soft">
+              Inteligente
+            </span>
+          </span>
         </Link>
-      </header>
-      <div className="flex flex-1">
-        <AppNav />
-        <main className="flex-1 px-xs pb-super pt-md md:px-md md:pb-md">
+
+        <AppNavSidebar />
+
+        <div className="mt-auto flex items-center gap-xs border-t border-hairline p-sm">
+          <span
+            aria-hidden="true"
+            className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full bg-canvas-elevated text-title-sm text-ink"
+          >
+            {initial}
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-body-sm text-ink">
+              {name}
+            </span>
+            <span className="block text-caption-upper uppercase text-muted-soft">
+              plano {plan.name}
+            </span>
+          </span>
+        </div>
+      </aside>
+
+      {/* Barra superior (mobile) */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex h-[56px] items-center justify-between border-b border-hairline px-xs md:hidden">
+          <Link href="/app" className="text-title-sm font-bold uppercase tracking-widest text-ink">
+            Mapeamento
+          </Link>
+          <span className="border border-hairline px-xxs py-xxxs text-caption-upper uppercase text-muted-soft">
+            {plan.name}
+          </span>
+        </header>
+
+        <main className="flex-1 px-xs pb-super pt-md md:px-xl md:pb-xl">
           {children}
         </main>
       </div>
+
+      <AppNavMobile />
     </div>
   );
 }

@@ -3,12 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Histórico · Mapeamento Inteligente" };
 
-const STATUS_LABEL: Record<string, string> = {
-  queued: "Na fila",
-  running: "Analisando…",
-  completed: "Concluída",
-  partial: "Parcial",
-  failed: "Falhou",
+const STATUS: Record<string, { label: string; dot: string }> = {
+  queued: { label: "Na fila", dot: "bg-muted" },
+  running: { label: "Analisando…", dot: "animate-pulse bg-info" },
+  completed: { label: "Concluída", dot: "bg-success" },
+  partial: { label: "Parcial", dot: "bg-focus-ring" },
+  failed: { label: "Falhou", dot: "bg-warning" },
 };
 
 export default async function HistoricoPage() {
@@ -68,8 +68,14 @@ export default async function HistoricoPage() {
                       {search.channels_total === 1 ? "canal" : "canais"}
                     </p>
                   </div>
-                  <span className="shrink-0 text-caption-upper uppercase text-body">
-                    {STATUS_LABEL[search.status] ?? search.status}
+                  <span className="flex shrink-0 items-center gap-xxs text-caption-upper uppercase text-body">
+                    <span
+                      aria-hidden="true"
+                      className={`h-[6px] w-[6px] rounded-full ${
+                        (STATUS[search.status] ?? STATUS.queued).dot
+                      }`}
+                    />
+                    {(STATUS[search.status] ?? STATUS.queued).label}
                   </span>
                 </Link>
               </li>

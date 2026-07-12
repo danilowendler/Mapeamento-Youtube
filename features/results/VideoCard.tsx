@@ -23,7 +23,7 @@ export function VideoCard({
       href={`https://www.youtube.com/watch?v=${card.videoId}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex gap-xs border border-hairline p-xs transition-colors hover:border-muted"
+      className="flex gap-xs border border-hairline p-xs transition-all duration-150 hover:border-muted hover:bg-canvas-elevated/20"
     >
       <div className="relative h-[68px] w-[120px] shrink-0 overflow-hidden bg-canvas-elevated">
         {card.thumbnailUrl ? (

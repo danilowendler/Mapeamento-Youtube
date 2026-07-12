@@ -145,6 +145,25 @@ body {
   color: var(--color-on-primary);
 }
 
+/* Scrollbar fina e escura — o detalhe que ninguém nota e todos sentem */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-canvas-elevated) transparent;
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-canvas-elevated);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 /* Barras do campo de dados: nascem do chão, em cascata */
 @keyframes bar-rise {
   from {
