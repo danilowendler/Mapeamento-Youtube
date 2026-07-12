@@ -34,8 +34,20 @@ export default async function HistoricoPage() {
       ) : (
         <ul className="flex flex-col">
           {searches.map((search) => {
-            const channels =
-              (search.input as { channels?: string[] }).channels ?? [];
+            const input = search.input as {
+              channels?: string[];
+              keyword?: string;
+              nicheName?: string;
+            };
+            const label = input.nicheName
+              ? `Nicho: ${input.nicheName}`
+              : input.keyword
+                ? `“${input.keyword}”`
+                : `${(input.channels ?? []).slice(0, 3).join(", ")}${
+                    (input.channels ?? []).length > 3
+                      ? ` +${(input.channels ?? []).length - 3}`
+                      : ""
+                  }`;
             return (
               <li key={search.id} className="border-b border-hairline">
                 <Link
@@ -43,10 +55,7 @@ export default async function HistoricoPage() {
                   className="flex items-center justify-between gap-xs py-xs transition-colors hover:bg-canvas-elevated/40"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-body-md text-ink">
-                      {channels.slice(0, 3).join(", ")}
-                      {channels.length > 3 && ` +${channels.length - 3}`}
-                    </p>
+                    <p className="truncate text-body-md text-ink">{label}</p>
                     <p className="text-body-sm text-muted-soft">
                       {new Date(search.created_at).toLocaleDateString("pt-BR", {
                         day: "2-digit",
