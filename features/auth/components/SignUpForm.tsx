@@ -44,6 +44,17 @@ export function SignUpForm() {
       <Button type="submit" disabled={pending}>
         {pending ? "Criando..." : "Criar conta"}
       </Button>
+      <p className="text-center text-caption text-muted">
+        Ao criar a conta você concorda com os{" "}
+        <Link href="/termos" className="underline hover:text-body">
+          Termos de Uso
+        </Link>{" "}
+        e a{" "}
+        <Link href="/privacidade" className="underline hover:text-body">
+          Política de Privacidade
+        </Link>
+        .
+      </p>
       <p className="text-center text-body-sm text-body">
         Já tem conta?{" "}
         <Link href="/login" className="text-ink">

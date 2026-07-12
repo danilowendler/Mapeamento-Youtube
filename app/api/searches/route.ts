@@ -3,6 +3,10 @@ import { inngest, searchRunEvent } from "@/lib/inngest/client";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
+  enforceRateLimit,
+  RateLimitedError,
+} from "@/services/rateLimitService";
+import {
   createSearch,
   createSearchSchema,
   InvalidChannelInputError,
@@ -39,6 +43,9 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Anti-rajada (doc 8 §8.2) — o limite de plano cuida do volume
+    await enforceRateLimit(`search:${user.id}`, 10, 60);
+
     const { searchId } = await createSearch(supabase, user.id, parsed.data);
     await inngest.send(
       searchRunEvent.create({ searchId, priority: 2 }),
@@ -51,6 +58,9 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ id: searchId }, { status: 202 });
   } catch (error) {
+    if (error instanceof RateLimitedError) {
+      return NextResponse.json({ error: error.message }, { status: 429 });
+    }
     if (error instanceof PlanLimitError) {
       return NextResponse.json(
         { error: error.message, limit: error.kind },
