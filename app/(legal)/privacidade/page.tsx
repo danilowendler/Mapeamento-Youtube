@@ -58,7 +58,7 @@ export default function PrivacidadePage() {
           pesquisas, favoritos e histórico de uso de forma permanente;
         </li>
         <li>Solicitar portabilidade ou esclarecimentos:
-        contato@mapeamentointeligente.com.br.</li>
+        contatomwmcorp@gmail.com.</li>
       </ul>
 
       <h2>5. Cookies</h2>

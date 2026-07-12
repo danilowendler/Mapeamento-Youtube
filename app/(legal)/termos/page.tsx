@@ -63,7 +63,7 @@ export default function TermosPage() {
       <p>
         Estes termos podem ser atualizados; mudanças relevantes serão
         comunicadas pelo e-mail da conta. Dúvidas:
-        contato@mapeamentointeligente.com.br.
+        contatomwmcorp@gmail.com.
       </p>
     </article>
   );
