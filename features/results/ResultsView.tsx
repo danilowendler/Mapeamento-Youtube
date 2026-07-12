@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { VideoCard } from "./VideoCard";
 import type { OpportunityCard } from "./types";
 
@@ -41,11 +41,14 @@ export function ResultsView({ cards }: { cards: OpportunityCard[] }) {
     [params, router],
   );
 
+  // Referência de "agora" fixada na montagem (regra de pureza do
+  // compiler; o filtro de idade não precisa de relógio vivo)
+  const [now] = useState(() => Date.now());
+
   const { longs, shorts, visible } = useMemo(() => {
     const longs = cards.filter((card) => !card.isShort);
     const shorts = cards.filter((card) => card.isShort);
     const pool = format === "long" ? longs : shorts;
-    const now = Date.now();
 
     const filtered = pool.filter((card) => {
       if (card.score < minScore) return false;
@@ -76,7 +79,7 @@ export function ResultsView({ cards }: { cards: OpportunityCard[] }) {
     });
 
     return { longs, shorts, visible: filtered };
-  }, [cards, format, minScore, maxAgeMonths, subsRange, sort]);
+  }, [cards, format, minScore, maxAgeMonths, subsRange, sort, now]);
 
   const selectClass =
     "h-[36px] cursor-pointer rounded-sm border border-hairline bg-canvas px-xxs text-body-sm text-ink";
