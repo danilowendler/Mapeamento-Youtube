@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createCheckoutSession } from "@/services/billingService";
+import {
+  enforceRateLimit,
+  RateLimitedError,
+} from "@/services/rateLimitService";
 
 const bodySchema = z.object({
   plan: z.union([z.literal("criador"), z.literal("pro")]),
@@ -23,6 +27,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    await enforceRateLimit(`checkout:${user.id}`, 5, 60);
     const url = await createCheckoutSession(
       user.id,
       user.email,
@@ -30,6 +35,9 @@ export async function POST(request: Request) {
     );
     return NextResponse.json({ url });
   } catch (error) {
+    if (error instanceof RateLimitedError) {
+      return NextResponse.json({ error: error.message }, { status: 429 });
+    }
     console.error("[billing/checkout]", error);
     return NextResponse.json(
       { error: "Erro ao iniciar o checkout. Tente novamente." },

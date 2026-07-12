@@ -58,6 +58,16 @@ export default function Home() {
           </div>
         ))}
       </section>
+
+      <footer className="mt-xxl flex items-center gap-xs border-t border-hairline pt-sm text-body-sm text-muted">
+        <span>© {new Date().getFullYear()} Mapeamento Inteligente</span>
+        <Link href="/termos" className="hover:text-body">
+          Termos de Uso
+        </Link>
+        <Link href="/privacidade" className="hover:text-body">
+          Privacidade
+        </Link>
+      </footer>
     </main>
   );
 }

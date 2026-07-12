@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/Button";
+import { DeleteAccountSection } from "@/features/account/DeleteAccountSection";
 import { signOut } from "@/features/auth/actions";
 import { PlanPanel } from "@/features/billing/PlanPanel";
 import { createClient } from "@/lib/supabase/server";
@@ -68,6 +69,8 @@ export default async function ContaPage() {
           </Button>
         </form>
       </div>
+
+      <DeleteAccountSection />
     </div>
   );
 }
