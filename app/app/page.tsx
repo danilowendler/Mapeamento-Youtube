@@ -36,9 +36,15 @@ export default async function NovaPesquisaPage() {
             {new Date(`${usage.periodEnd}T00:00:00`).toLocaleDateString(
               "pt-BR",
             )}
-            . Planos com mais pesquisas chegam em breve — enquanto isso, suas
-            pesquisas anteriores continuam acessíveis no histórico.
+            . Os planos Criador (30 pesquisas/mês) e Pro (100/mês) liberam
+            muito mais — e suas pesquisas anteriores seguem no histórico.
           </p>
+          <a
+            href="/app/conta#planos"
+            className="inline-flex h-[48px] w-fit items-center bg-primary px-md text-button-label uppercase text-on-primary active:bg-primary-active"
+          >
+            Ver planos
+          </a>
         </div>
       ) : (
         <SearchForm niches={niches ?? []} />

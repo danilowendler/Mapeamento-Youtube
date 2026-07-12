@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { Button } from "@/components/Button";
 import { signOut } from "@/features/auth/actions";
+import { PlanPanel } from "@/features/billing/PlanPanel";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUsage, getEffectivePlan } from "@/services/planService";
 
 export const metadata = { title: "Conta · Mapeamento Inteligente" };
 
@@ -11,10 +13,11 @@ export default async function ContaPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("display_name, created_at")
-    .single();
+  const [{ data: profile }, plan, usage] = await Promise.all([
+    supabase.from("profiles").select("display_name, created_at").single(),
+    getEffectivePlan(supabase),
+    getCurrentUsage(supabase),
+  ]);
 
   return (
     <div className="mx-auto flex max-w-[720px] flex-col gap-md pt-xl">
@@ -40,6 +43,17 @@ export default async function ContaPage() {
           </dd>
         </div>
       </dl>
+
+      <PlanPanel
+        plan={{
+          code: plan.code,
+          name: plan.name,
+          subscriptionStatus: plan.subscriptionStatus,
+          cancelAtPeriodEnd: plan.cancelAtPeriodEnd,
+          currentPeriodEnd: plan.currentPeriodEnd,
+          usage: { used: usage.used, limit: usage.limit },
+        }}
+      />
 
       <div className="flex flex-wrap items-center gap-xs">
         <Link
