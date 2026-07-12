@@ -24,6 +24,18 @@ export function ChannelChips({ chips }: { chips: ChannelChip[] }) {
               : undefined
           }
         >
+          <span
+            aria-hidden="true"
+            className={`h-[6px] w-[6px] shrink-0 rounded-full ${
+              chip.state === "collecting"
+                ? "animate-pulse bg-info"
+                : chip.state === "ready"
+                  ? "bg-success"
+                  : chip.state === "failed"
+                    ? "bg-warning"
+                    : "bg-muted"
+            }`}
+          />
           <span className="text-ink">{chip.title}</span>
           {chip.state === "collecting" && (
             <span className="animate-pulse text-body">coletando…</span>

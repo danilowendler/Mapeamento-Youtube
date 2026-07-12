@@ -15,8 +15,11 @@ export default async function NovaPesquisaPage() {
   const exhausted = usage.used >= usage.limit;
 
   return (
-    <div className="mx-auto flex max-w-[720px] flex-col gap-md pt-xl">
+    <div className="mx-auto flex max-w-[760px] flex-col gap-md pt-lg md:pt-xl">
       <header className="flex flex-col gap-xxs">
+        <span className="text-caption-upper uppercase tracking-widest text-primary">
+          Central de pesquisa
+        </span>
         <h1 className="text-display-lg text-ink">O que você quer mapear?</h1>
         <p className="text-body-md text-body">
           Escolha um nicho, digite um tema ou informe canais — e descubra
