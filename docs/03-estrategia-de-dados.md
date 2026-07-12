@@ -19,6 +19,8 @@ Cota padrão: **10.000 unidades/dia** por projeto Google Cloud.
 
 **Assimetria central:** analisar um canal de 500 vídeos custa ~21 unidades (1 channels + 10 playlistItems + 10 videos). Uma única busca por palavra-chave custa 100. Regra permanente: **`search.list` é artigo de luxo; todo o resto é commodity.**
 
+> **Observação de produção (12/07/2026):** o console do Google mostra o sistema de cotas atual com **limites por método**: "Search Queries per day" = 100 requisições (equivalente ao teto de 100 buscas/dia do modelo de unidades) e "Queries per day" = 10.000 **requisições** no pool geral — buscas contam 1 ali, não 100. Na prática temos mais folga de coleta que o modelado. Nosso `quota_ledger` mantém o modelo clássico (busca = 100 un) deliberadamente: é mais conservador e serve de margem de segurança. Recalibrar apenas se a fila de prioridades represar.
+
 Custos típicos por operação de produto:
 
 | Operação de produto | Custo estimado | Cabem por dia (10k) |
