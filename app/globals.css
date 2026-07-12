@@ -136,3 +136,88 @@ body {
 @utility animate-progress-sweep {
   animation: progress-sweep 1.2s ease-in-out infinite;
 }
+
+/* ===== Landing · conceito "O Outlier" ===== */
+
+/* Seleção de texto: o único outro lugar onde o vermelho aparece */
+::selection {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+/* Barras do campo de dados: nascem do chão, em cascata */
+@keyframes bar-rise {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@utility animate-bar-rise {
+  transform-origin: bottom;
+  transform: scaleY(0);
+  animation: bar-rise 0.7s cubic-bezier(0.22, 1.4, 0.36, 1) forwards;
+}
+
+/* Carimbo do badge de score */
+@keyframes badge-stamp {
+  0% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+  70% {
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@utility animate-badge-stamp {
+  opacity: 0;
+  animation: badge-stamp 0.45s cubic-bezier(0.22, 1.2, 0.36, 1) forwards;
+}
+
+/* Revelação suave ao entrar na viewport (via Reveal.tsx) */
+@utility reveal-hidden {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s ease;
+}
+
+@utility reveal-shown {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Grade técnica de fundo — o detalhe que ninguém nota e todos sentem */
+@utility bg-technical-grid {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-bar-rise {
+    animation: none;
+    transform: scaleY(1);
+  }
+  .animate-badge-stamp {
+    animation: none;
+    opacity: 1;
+  }
+  .reveal-hidden {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .animate-progress-sweep {
+    animation-duration: 2.4s;
+  }
+}
