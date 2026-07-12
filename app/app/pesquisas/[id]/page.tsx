@@ -3,11 +3,13 @@ import {
   ChannelChips,
   type ChannelChip,
 } from "@/features/results/ChannelChips";
+import { RelatedChannels } from "@/features/results/RelatedChannels";
 import { ResultsView } from "@/features/results/ResultsView";
 import { SearchLive } from "@/features/results/SearchLive";
 import type { OpportunityCard } from "@/features/results/types";
 import { createClient } from "@/lib/supabase/server";
 import { MIN_BUCKET_SAMPLE } from "@/services/outliers";
+import { findRelatedChannels } from "@/services/relatedService";
 
 export const metadata = { title: "Resultados · Mapeamento Inteligente" };
 
@@ -139,6 +141,13 @@ export default async function ResultadosPage({
 
   const failedInputs = (search.failed_inputs ?? []) as string[];
 
+  // Canais relacionados via corpus — só quando a pesquisa terminou
+  const isDone = ["completed", "partial"].includes(search.status);
+  const related =
+    isDone && readyChannelIds.length > 0
+      ? await findRelatedChannels(readyChannelIds)
+      : [];
+
   return (
     <div className="mx-auto flex max-w-[860px] flex-col gap-md pt-md">
       <header className="flex flex-col gap-xs">
@@ -177,6 +186,8 @@ export default async function ResultadosPage({
       ) : (
         <ResultsView cards={cards} />
       )}
+
+      <RelatedChannels related={related} />
     </div>
   );
 }

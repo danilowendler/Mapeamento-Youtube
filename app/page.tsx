@@ -18,7 +18,7 @@ export default function Home() {
           href="/cadastro"
           className="inline-flex h-[48px] items-center bg-primary px-md text-button-label uppercase text-on-primary active:bg-primary-active"
         >
-          Criar conta
+          Começar grátis
         </Link>
         <Link
           href="/login"
@@ -27,6 +27,37 @@ export default function Home() {
           Entrar
         </Link>
       </div>
+
+      <section className="mt-xxl grid w-full max-w-[860px] gap-xs md:grid-cols-3">
+        {[
+          {
+            step: "1",
+            title: "Escolha o tema",
+            text: "Um nicho pronto, uma palavra-chave ou os canais que você acompanha.",
+          },
+          {
+            step: "2",
+            title: "Nós analisamos",
+            text: "Coletamos os vídeos e comparamos cada um com a mediana do próprio canal.",
+          },
+          {
+            step: "3",
+            title: "Receba oportunidades",
+            text: "Vídeos com 3×, 10×, 30× o desempenho normal — temas com demanda comprovada.",
+          },
+        ].map(({ step, title, text }) => (
+          <div
+            key={step}
+            className="flex flex-col gap-xxs border border-hairline p-sm"
+          >
+            <span className="text-caption-upper uppercase text-primary">
+              Passo {step}
+            </span>
+            <h2 className="text-title-md text-ink">{title}</h2>
+            <p className="text-body-sm text-body">{text}</p>
+          </div>
+        ))}
+      </section>
     </main>
   );
 }
