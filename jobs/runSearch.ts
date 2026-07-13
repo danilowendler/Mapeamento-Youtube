@@ -128,6 +128,7 @@ export const runSearch = inngest.createFunction(
               channel_id: collection.channelId,
               status: "ready",
               top_score: analysis.topScore,
+              opportunities: analysis.opportunities,
               completed_at: new Date().toISOString(),
             },
             { onConflict: "search_id,channel_id" },

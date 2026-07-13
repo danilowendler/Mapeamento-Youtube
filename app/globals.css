@@ -36,6 +36,12 @@
   --color-success: #03904a;
   --color-warning: #f13a2c;
 
+  /* ---- Cores · dataviz ---- */
+  /* Matiz do info com croma elevado para passar nas checagens da
+     skill dataviz contra o canvas (#181818): banda de luminosidade,
+     piso de croma e contraste ≥ 3:1. Validado por script, não no olho. */
+  --color-data-series: #2f9fd6;
+
   /* ---- Tipografia ---- */
   --font-sans: var(--font-inter), -apple-system, system-ui, sans-serif;
 
