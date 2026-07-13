@@ -128,12 +128,37 @@ Entregáveis:
 
 Formato de trabalho: lotes pequenos por tela (fundador indica a
 referência → arquiteto adapta ao design system → deploy → avaliação).
-Candidatos naturais: dashboard de métricas na home do app, transições
-de página, painel de detalhe do vídeo (doc 6 §6.4), comparação visual
-de canais.
+
+### Escopo definido pelo time (12/07/2026)
+
+1. **Nova Pesquisa fracionada:** as três portas de entrada (Nichos ·
+   Palavra-chave · Canais) deixam de ser abas e viram **painéis lado a
+   lado** no desktop (empilhados no mobile). Decisão reversível — se a
+   densidade piorar a experiência, volta ao formato de abas.
+2. **Entrada estilo IA:** o campo de palavra-chave vira um componente
+   de chat/prompt (referência do 21st.dev): *"O que você quer mapear
+   hoje, Danilo?"* (nome real do usuário). Nota do arquiteto: é uma
+   entrada inteligente, não um LLM — o parse continua determinístico
+   (nicho/keyword/canal via parseChannelInput); a estética é de chat,
+   a promessa não. Placeholder rotativo com exemplos.
+3. **Histórico com mini-dashboard:** recomendação do arquiteto —
+   3 stat tiles (pesquisas no mês · oportunidades encontradas ·
+   favoritos acionados, a North Star) + 1 gráfico de barras compacto
+   (pesquisas/oportunidades por semana, últimas 8 semanas). Dados já
+   existem em searches/product_events/favorites. **Obrigatório: ler a
+   skill `dataviz` antes de qualquer gráfico.**
+4. **Minha Pauta com categorias:** encapsulamento dos favoritos em
+   coleções nomeadas pelo usuário (ex.: "Próximo mês", "Shorts",
+   "Cliente X"). Exige migration: tabela `pauta_categories` (user_id,
+   name, position, RLS por dono) + coluna `category_id` nullable em
+   favorites; UI de agrupamento + mover entre categorias; sem
+   categoria = "Geral".
+5. Demais itens: componentes avulsos do 21st.dev trazidos pelo
+   fundador, adaptados um a um.
 
 ✅ Conclusão (por lote): componente no ar fiel aos tokens, sem
-regressão de performance (skeletons/otimista preservados).
+regressão de performance (skeletons/otimista preservados), suite
+verde, migrations aplicadas em dev+prod quando houver.
 
 ## M11 · Pós-lançamento imediato (contínuo)
 Não é milestone de construção — é regime de operação: acompanhar métricas ([doc 1, §1.7](01-visao-de-produto.md) e [doc 7, §7.5](07-monetizacao.md)), triagem de feedback, ajuste de pricing com dados reais, pedido de aumento de cota ao Google quando a fila de prioridade 1–2 represar, e priorização do roadmap pós-MVP (Pix, anual, páginas SEO do corpus, IA).
