@@ -7,10 +7,14 @@ export const metadata = { title: "Nova Pesquisa" };
 
 export default async function NovaPesquisaPage() {
   const supabase = await createClient();
-  const [{ data: niches }, usage] = await Promise.all([
+  const [{ data: niches }, { data: profile }, usage] = await Promise.all([
     supabase.from("niches").select("slug, name, description").order("name"),
+    supabase.from("profiles").select("display_name").single(),
     getCurrentUsage(supabase),
   ]);
+
+  // Saudação da entrada estilo chat (M10, lote 2) — primeiro nome real
+  const firstName = profile?.display_name?.trim().split(/\s+/)[0];
 
   const exhausted = usage.used >= usage.limit;
 
@@ -20,7 +24,9 @@ export default async function NovaPesquisaPage() {
         <span className="text-caption-upper uppercase tracking-widest text-primary">
           Central de pesquisa
         </span>
-        <h1 className="text-display-lg text-ink">O que você quer mapear?</h1>
+        <h1 className="text-display-lg text-ink">
+          O que você quer mapear hoje{firstName ? `, ${firstName}` : ""}?
+        </h1>
         <p className="text-body-md text-body">
           Escolha um nicho, digite um tema ou informe canais — e descubra
           quais vídeos performaram muito acima do normal.
