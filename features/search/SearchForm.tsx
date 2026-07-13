@@ -14,20 +14,18 @@ export type NicheOption = {
   description: string | null;
 };
 
-type Mode = "niche" | "keyword" | "channels";
-
 type Payload =
   | { mode: "channels"; inputs: string[] }
   | { mode: "keyword"; keyword: string }
   | { mode: "niche"; nicheSlug: string };
 
 /**
- * Nova Pesquisa (doc 6 §6.3): três portas de entrada. Nichos é a
- * padrão — o onboarding É o produto acontecendo (doc 6 §6.2).
+ * Nova Pesquisa (doc 6 §6.3): três portas de entrada, visíveis ao mesmo
+ * tempo — painéis lado a lado no desktop, empilhados no mobile (M10,
+ * lote 1; decisão reversível para abas se a densidade piorar).
  */
 export function SearchForm({ niches }: { niches: NicheOption[] }) {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>("niche");
   const [raw, setRaw] = useState("");
   const [keyword, setKeyword] = useState("");
   const [error, setError] = useState<string | undefined>();
@@ -78,39 +76,25 @@ export function SearchForm({ niches }: { niches: NicheOption[] }) {
 
   return (
     <div className="flex flex-col gap-sm">
-      <div role="tablist" className="flex border-b border-hairline">
-        {(
-          [
-            { key: "niche", label: "Nichos" },
-            { key: "keyword", label: "Palavra-chave" },
-            { key: "channels", label: "Canais" },
-          ] as const
-        ).map(({ key, label }) => (
-          <button
-            key={key}
-            role="tab"
-            aria-selected={mode === key}
-            onClick={() => setMode(key)}
-            className={`cursor-pointer px-xs py-xxs text-nav-link uppercase transition-colors ${
-              mode === key
-                ? "border-b-2 border-ink text-ink"
-                : "text-muted-soft hover:text-body"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
       <FormMessage error={error} />
 
-      {mode === "niche" && (
-        <div className="flex flex-col gap-xs">
-          <p className="text-body-sm text-body">
-            Escolha um nicho e receba as oportunidades dos canais que
-            dominam o tema.
-          </p>
-          <ul className="grid grid-cols-1 gap-xxs sm:grid-cols-2 md:grid-cols-3">
+      <div className="grid grid-cols-1 divide-y divide-hairline border border-hairline lg:grid-cols-3 lg:divide-x lg:divide-y-0">
+        <section
+          aria-labelledby="panel-niche"
+          className="flex flex-col gap-xs p-sm"
+        >
+          <header className="flex flex-col gap-xxxs">
+            <h2
+              id="panel-niche"
+              className="text-caption-upper uppercase text-muted-soft"
+            >
+              Nichos
+            </h2>
+            <p className="text-body-sm text-body">
+              Receba as oportunidades dos canais que dominam o tema.
+            </p>
+          </header>
+          <ul className="flex flex-col gap-xxs">
             {niches.map((niche) => (
               <li key={niche.slug}>
                 <button
@@ -138,84 +122,109 @@ export function SearchForm({ niches }: { niches: NicheOption[] }) {
               </li>
             ))}
           </ul>
-        </div>
-      )}
+        </section>
 
-      {mode === "keyword" && (
-        <form
-          className="flex flex-col gap-xs"
-          onSubmit={(event) => {
-            event.preventDefault();
-            submit({ mode: "keyword", keyword }, "keyword");
-          }}
+        <section
+          aria-labelledby="panel-keyword"
+          className="flex flex-col gap-xs p-sm"
         >
-          <div className="flex flex-col gap-xxs">
-            <label
-              htmlFor="keyword"
+          <header className="flex flex-col gap-xxxs">
+            <h2
+              id="panel-keyword"
               className="text-caption-upper uppercase text-muted-soft"
             >
-              Palavra-chave ou tema
-            </label>
-            <input
-              id="keyword"
-              value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
-              placeholder="ex.: renda extra, receitas fit, inglês para viagem…"
-              className="h-[48px] rounded-sm border border-hairline bg-canvas px-xs text-body-md text-ink placeholder:text-muted"
-            />
-          </div>
-          <Button
-            type="submit"
-            disabled={Boolean(submitting) || keyword.trim().length < 2}
-          >
-            {submitting === "keyword" ? "Iniciando…" : "Mapear tema"}
-          </Button>
-        </form>
-      )}
-
-      {mode === "channels" && (
-        <div className="flex flex-col gap-xs">
-          <div className="flex flex-col gap-xxs">
-            <label
-              htmlFor="channels"
-              className="text-caption-upper uppercase text-muted-soft"
-            >
-              Canais — um por linha (URL, @handle ou ID)
-            </label>
-            <textarea
-              id="channels"
-              value={raw}
-              onChange={(event) => setRaw(event.target.value)}
-              rows={6}
-              placeholder={"@manualdomundo\nhttps://youtube.com/@coisadenerd"}
-              className="rounded-sm border border-hairline bg-canvas px-xs py-xs font-mono text-body-md text-ink placeholder:text-muted"
-            />
+              Palavra-chave
+            </h2>
             <p className="text-body-sm text-body">
-              {analysis.filter((a) => a.valid).length} de {MAX_CHANNELS} canais
-              {hasInvalid && (
-                <span className="text-warning">
-                  {" "}
-                  · use URL ou @handle (nomes livres: use a aba
-                  Palavra-chave)
-                </span>
-              )}
+              Digite um tema e descubra quem performa acima do normal nele.
             </p>
-          </div>
-          <Button
-            onClick={() =>
-              submit({ mode: "channels", inputs: lines }, "channels")
-            }
-            disabled={
-              Boolean(submitting) ||
-              lines.length === 0 ||
-              hasInvalid ||
-              lines.length > MAX_CHANNELS
-            }
+          </header>
+          <form
+            className="flex grow flex-col gap-xs"
+            onSubmit={(event) => {
+              event.preventDefault();
+              submit({ mode: "keyword", keyword }, "keyword");
+            }}
           >
-            {submitting === "channels" ? "Iniciando…" : "Mapear canais"}
-          </Button>
-        </div>
-      )}
+            <div className="flex flex-col gap-xxs">
+              <label htmlFor="keyword" className="sr-only">
+                Palavra-chave ou tema
+              </label>
+              <input
+                id="keyword"
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+                placeholder="ex.: renda extra, receitas fit…"
+                className="h-[48px] rounded-sm border border-hairline bg-canvas px-xs text-body-md text-ink placeholder:text-muted"
+              />
+            </div>
+            <Button
+              type="submit"
+              className="mt-auto"
+              disabled={Boolean(submitting) || keyword.trim().length < 2}
+            >
+              {submitting === "keyword" ? "Iniciando…" : "Mapear tema"}
+            </Button>
+          </form>
+        </section>
+
+        <section
+          aria-labelledby="panel-channels"
+          className="flex flex-col gap-xs p-sm"
+        >
+          <header className="flex flex-col gap-xxxs">
+            <h2
+              id="panel-channels"
+              className="text-caption-upper uppercase text-muted-soft"
+            >
+              Canais
+            </h2>
+            <p className="text-body-sm text-body">
+              Um por linha — URL, @handle ou ID.
+            </p>
+          </header>
+          <div className="flex grow flex-col gap-xs">
+            <div className="flex flex-col gap-xxs">
+              <label htmlFor="channels" className="sr-only">
+                Canais — um por linha (URL, @handle ou ID)
+              </label>
+              <textarea
+                id="channels"
+                value={raw}
+                onChange={(event) => setRaw(event.target.value)}
+                rows={6}
+                placeholder={"@manualdomundo\nhttps://youtube.com/@coisadenerd"}
+                className="rounded-sm border border-hairline bg-canvas px-xs py-xs font-mono text-body-md text-ink placeholder:text-muted"
+              />
+              <p className="text-body-sm text-body">
+                {analysis.filter((a) => a.valid).length} de {MAX_CHANNELS}{" "}
+                canais
+                {hasInvalid && (
+                  <span className="text-warning">
+                    {" "}
+                    · use URL ou @handle (nomes livres: use o painel
+                    Palavra-chave)
+                  </span>
+                )}
+              </p>
+            </div>
+            <Button
+              className="mt-auto"
+              onClick={() =>
+                submit({ mode: "channels", inputs: lines }, "channels")
+              }
+              disabled={
+                Boolean(submitting) ||
+                lines.length === 0 ||
+                hasInvalid ||
+                lines.length > MAX_CHANNELS
+              }
+            >
+              {submitting === "channels" ? "Iniciando…" : "Mapear canais"}
+            </Button>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
