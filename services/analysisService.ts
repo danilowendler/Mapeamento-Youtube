@@ -1,16 +1,26 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { analyzeChannel, type AnalyzableVideo } from "./outliers";
+import {
+  analyzeChannel,
+  MIN_OPPORTUNITY_SCORE,
+  type AnalyzableVideo,
+} from "./outliers";
 
 /**
  * Lê os vídeos de um canal do corpus, roda o motor de outliers e
  * persiste baselines (channel_baselines) e scores (videos).
  * Idempotente; roda após cada coleta/recoleta.
  *
- * Retorna o maior score do canal (top_score do search_result).
+ * Retorna o maior score do canal (top_score do search_result) e a
+ * contagem de oportunidades (score ≥ corte), materializada em
+ * search_results.opportunities (M10, lote 3).
  */
 export async function applyChannelAnalysis(
   channelId: string,
-): Promise<{ topScore: number | null; videosScored: number }> {
+): Promise<{
+  topScore: number | null;
+  videosScored: number;
+  opportunities: number;
+}> {
   const supabase = createAdminClient();
 
   const { data: rows, error } = await supabase
@@ -19,7 +29,7 @@ export async function applyChannelAnalysis(
     .eq("channel_id", channelId);
   if (error) throw new Error(`analysis.readVideos: ${error.message}`);
   if (!rows || rows.length === 0) {
-    return { topScore: null, videosScored: 0 };
+    return { topScore: null, videosScored: 0, opportunities: 0 };
   }
 
   const analyzable: AnalyzableVideo[] = rows.map((row) => ({
@@ -74,5 +84,8 @@ export async function applyChannelAnalysis(
   return {
     topScore,
     videosScored: videos.filter((v) => v.score !== null).length,
+    opportunities: videos.filter(
+      (v) => v.score !== null && v.score >= MIN_OPPORTUNITY_SCORE,
+    ).length,
   };
 }

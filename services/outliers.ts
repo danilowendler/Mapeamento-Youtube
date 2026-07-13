@@ -13,6 +13,8 @@
 export const MIN_BASELINE_AGE_DAYS = 14;
 /** Amostra mínima para o baseline do bucket ser confiável. */
 export const MIN_BUCKET_SAMPLE = 10;
+/** Score mínimo para um vídeo contar como oportunidade (doc 3 §3.6). */
+export const MIN_OPPORTUNITY_SCORE = 3;
 
 export type VideoFormat = "short" | "long";
 export type AgeBucket = "14d-3m" | "3m-12m" | "12m+";

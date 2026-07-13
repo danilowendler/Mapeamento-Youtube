@@ -2,11 +2,9 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getPlanLimits } from "@/services/planService";
+import { MIN_OPPORTUNITY_SCORE } from "@/services/outliers";
 import { BRAND } from "@/lib/brand";
 import { buildCsv } from "@/utils/csv";
-
-/** Score mínimo de oportunidade — mesmo corte da tela de resultados. */
-const MIN_OPPORTUNITY_SCORE = 3;
 
 /**
  * GET /api/searches/[id]/export — CSV das oportunidades da pesquisa.
