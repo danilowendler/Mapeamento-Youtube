@@ -140,7 +140,7 @@ export function SearchForm({ niches }: { niches: NicheOption[] }) {
             </p>
           </header>
           <form
-            className="flex grow flex-col gap-xs"
+            className="flex flex-col gap-xs"
             onSubmit={(event) => {
               event.preventDefault();
               submit({ mode: "keyword", keyword }, "keyword");
@@ -160,7 +160,6 @@ export function SearchForm({ niches }: { niches: NicheOption[] }) {
             </div>
             <Button
               type="submit"
-              className="mt-auto"
               disabled={Boolean(submitting) || keyword.trim().length < 2}
             >
               {submitting === "keyword" ? "Iniciando…" : "Mapear tema"}
@@ -183,7 +182,7 @@ export function SearchForm({ niches }: { niches: NicheOption[] }) {
               Um por linha — URL, @handle ou ID.
             </p>
           </header>
-          <div className="flex grow flex-col gap-xs">
+          <div className="flex flex-col gap-xs">
             <div className="flex flex-col gap-xxs">
               <label htmlFor="channels" className="sr-only">
                 Canais — um por linha (URL, @handle ou ID)
@@ -209,7 +208,6 @@ export function SearchForm({ niches }: { niches: NicheOption[] }) {
               </p>
             </div>
             <Button
-              className="mt-auto"
               onClick={() =>
                 submit({ mode: "channels", inputs: lines }, "channels")
               }
