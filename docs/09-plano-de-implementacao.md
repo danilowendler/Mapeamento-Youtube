@@ -131,6 +131,10 @@ referência → arquiteto adapta ao design system → deploy → avaliação).
 
 ### Escopo definido pelo time (12/07/2026)
 
+> ✅ Itens 1–4 entregues em 12/07/2026 (lotes m10-1 a m10-4; migrations
+> `20260712000006` e `20260712000007` aplicadas em dev+prod). Item 5
+> segue aberto, sob demanda do fundador.
+
 1. **Nova Pesquisa fracionada:** as três portas de entrada (Nichos ·
    Palavra-chave · Canais) deixam de ser abas e viram **painéis lado a
    lado** no desktop (empilhados no mobile). Decisão reversível — se a
