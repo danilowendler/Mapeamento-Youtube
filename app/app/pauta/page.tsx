@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { CategoryHeader } from "@/features/pauta/CategoryHeader";
+import { MoveCategorySelect } from "@/features/pauta/MoveCategorySelect";
+import { NewCategoryForm } from "@/features/pauta/NewCategoryForm";
 import { VideoCard } from "@/features/results/VideoCard";
 import type { OpportunityCard } from "@/features/results/types";
 import { createClient } from "@/lib/supabase/server";
@@ -30,13 +33,20 @@ export default async function PautaPage() {
     );
   }
 
-  const { data: favorites } = await supabase
-    .from("favorites")
-    .select("video_id, search_id, created_at")
-    .order("created_at", { ascending: false })
-    .limit(200);
+  const [{ data: categories }, { data: favorites }] = await Promise.all([
+    supabase
+      .from("pauta_categories")
+      .select("id, name, position")
+      .order("position")
+      .order("created_at"),
+    supabase
+      .from("favorites")
+      .select("video_id, search_id, category_id, created_at")
+      .order("created_at", { ascending: false })
+      .limit(200),
+  ]);
 
-  let cards: OpportunityCard[] = [];
+  let cards: (OpportunityCard & { categoryId: string | null })[] = [];
   if (favorites && favorites.length > 0) {
     const videoIds = favorites.map((f) => f.video_id);
     const { data: videos } = await supabase
@@ -74,10 +84,30 @@ export default async function PautaPage() {
           channelId: video.channel_id,
           channelTitle: channel?.title ?? "—",
           channelSubscribers: channel?.subscriber_count ?? null,
+          categoryId: favorite.category_id,
         };
       })
-      .filter((card): card is OpportunityCard => card !== null);
+      .filter(
+        (card): card is OpportunityCard & { categoryId: string | null } =>
+          card !== null,
+      );
   }
+
+  const options = (categories ?? []).map((c) => ({ id: c.id, name: c.name }));
+  const knownIds = new Set(options.map((o) => o.id));
+
+  // "Geral" primeiro (caixa de entrada dos sem categoria), depois as
+  // categorias do usuário na ordem de position
+  const sections: { id: string | null; name: string }[] = [
+    { id: null, name: "Geral" },
+    ...options,
+  ];
+  const cardsOf = (sectionId: string | null) =>
+    cards.filter((card) =>
+      sectionId === null
+        ? card.categoryId === null || !knownIds.has(card.categoryId)
+        : card.categoryId === sectionId,
+    );
 
   return (
     <div className="mx-auto flex max-w-[860px] flex-col gap-md pt-xl">
@@ -89,19 +119,67 @@ export default async function PautaPage() {
         </p>
       </header>
 
-      {cards.length === 0 ? (
+      <NewCategoryForm />
+
+      {cards.length === 0 && options.length === 0 ? (
         <p className="border border-dashed border-hairline p-sm text-body-md text-body">
           Nada salvo ainda — clique na ☆ de qualquer oportunidade para
           adicioná-la aqui.
         </p>
       ) : (
-        <ul className="flex flex-col gap-xs">
-          {cards.map((card) => (
-            <li key={card.videoId}>
-              <VideoCard card={card} favorited />
-            </li>
-          ))}
-        </ul>
+        sections.map((section) => {
+          const sectionCards = cardsOf(section.id);
+          // Geral vazio some quando o usuário já organizou tudo
+          if (section.id === null && sectionCards.length === 0) return null;
+          return (
+            <section
+              key={section.id ?? "geral"}
+              className="flex flex-col gap-xs"
+            >
+              {section.id === null ? (
+                <h2 className="border-b border-hairline pb-xxs text-title-md text-ink">
+                  Geral{" "}
+                  <span className="text-body-sm font-normal text-muted-soft">
+                    · {sectionCards.length}{" "}
+                    {sectionCards.length === 1 ? "ideia" : "ideias"}
+                  </span>
+                </h2>
+              ) : (
+                <CategoryHeader
+                  id={section.id}
+                  name={section.name}
+                  count={sectionCards.length}
+                />
+              )}
+
+              {sectionCards.length === 0 ? (
+                <p className="text-body-sm text-muted-soft">
+                  Vazia — use o seletor “Categoria” de qualquer favorito para
+                  mover ideias para cá.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-xs">
+                  {sectionCards.map((card) => (
+                    <li key={card.videoId} className="flex flex-col gap-xxs">
+                      <VideoCard card={card} favorited />
+                      <div className="flex justify-end">
+                        <MoveCategorySelect
+                          videoId={card.videoId}
+                          current={
+                            card.categoryId && knownIds.has(card.categoryId)
+                              ? card.categoryId
+                              : null
+                          }
+                          options={options}
+                        />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          );
+        })
       )}
     </div>
   );
