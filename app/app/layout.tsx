@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { BrandMark } from "@/components/BrandMark";
 import { AppNavMobile, AppNavSidebar } from "@/features/shell/AppNav";
 import { createClient } from "@/lib/supabase/server";
 import { getEffectivePlan } from "@/services/planService";
@@ -33,12 +34,7 @@ export default async function AppLayout({
           href="/app"
           className="flex h-[64px] items-center border-b border-hairline px-sm"
         >
-          <span className="text-title-sm font-bold uppercase tracking-widest text-ink">
-            Mapeamento
-            <span className="block text-caption-upper font-semibold text-muted-soft">
-              Inteligente
-            </span>
-          </span>
+          <BrandMark />
         </Link>
 
         <AppNavSidebar />
@@ -64,8 +60,8 @@ export default async function AppLayout({
       {/* Barra superior (mobile) */}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-[56px] items-center justify-between border-b border-hairline px-xs md:hidden">
-          <Link href="/app" className="text-title-sm font-bold uppercase tracking-widest text-ink">
-            Mapeamento
+          <Link href="/app">
+            <BrandMark />
           </Link>
           <span className="border border-hairline px-xxs py-xxxs text-caption-upper uppercase text-muted-soft">
             {plan.name}

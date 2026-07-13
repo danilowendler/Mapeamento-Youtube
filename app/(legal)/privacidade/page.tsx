@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Política de Privacidade · Mapeamento Inteligente",
+  title: "Política de Privacidade",
 };
 
 export default function PrivacidadePage() {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getPlanLimits } from "@/services/planService";
+import { BRAND } from "@/lib/brand";
 import { buildCsv } from "@/utils/csv";
 
 /** Score mínimo de oportunidade — mesmo corte da tela de resultados. */
@@ -106,7 +107,7 @@ export async function GET(
       ];
     }),
     [
-      `Gerado por Mapeamento Inteligente — ${process.env.NEXT_PUBLIC_APP_URL ?? ""}`,
+      `Gerado por ${BRAND.name} — ${process.env.NEXT_PUBLIC_APP_URL ?? ""}`,
     ],
   );
 

@@ -3,7 +3,7 @@ import { UsageMeter } from "@/features/search/UsageMeter";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUsage } from "@/services/planService";
 
-export const metadata = { title: "Nova Pesquisa · Mapeamento Inteligente" };
+export const metadata = { title: "Nova Pesquisa" };
 
 export default async function NovaPesquisaPage() {
   const supabase = await createClient();

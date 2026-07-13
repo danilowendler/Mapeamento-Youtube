@@ -1,7 +1,7 @@
 import { UpdatePasswordForm } from "@/features/auth/components/UpdatePasswordForm";
 
 export const metadata = {
-  title: "Nova senha · Mapeamento Inteligente",
+  title: "Nova senha",
 };
 
 export default function AtualizarSenhaPage() {

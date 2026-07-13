@@ -1,7 +1,7 @@
 import { ResetRequestForm } from "@/features/auth/components/ResetRequestForm";
 
 export const metadata = {
-  title: "Recuperar senha · Mapeamento Inteligente",
+  title: "Recuperar senha",
 };
 
 export default function RecuperarSenhaPage() {

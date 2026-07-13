@@ -1,7 +1,7 @@
 import { GoogleButton } from "@/features/auth/components/GoogleButton";
 import { LoginForm } from "@/features/auth/components/LoginForm";
 
-export const metadata = { title: "Entrar · Mapeamento Inteligente" };
+export const metadata = { title: "Entrar" };
 
 export default async function LoginPage({
   searchParams,

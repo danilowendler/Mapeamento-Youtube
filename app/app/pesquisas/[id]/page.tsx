@@ -13,7 +13,7 @@ import { MIN_BUCKET_SAMPLE } from "@/services/outliers";
 import { getPlanLimits } from "@/services/planService";
 import { findRelatedChannels } from "@/services/relatedService";
 
-export const metadata = { title: "Resultados · Mapeamento Inteligente" };
+export const metadata = { title: "Resultados" };
 
 /** Score mínimo para um vídeo ser uma oportunidade (doc 3 §3.6). */
 const MIN_OPPORTUNITY_SCORE = 3;

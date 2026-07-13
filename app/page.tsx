@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BrandMark } from "@/components/BrandMark";
+import { BRAND } from "@/lib/brand";
 import { OutlierField } from "@/features/landing/OutlierField";
 import { Reveal } from "@/features/landing/Reveal";
 import {
@@ -9,9 +11,8 @@ import {
 } from "@/features/landing/StepDiagrams";
 
 export const metadata: Metadata = {
-  title: "Mapeamento Inteligente — descubra sobre o que fazer seu próximo vídeo",
-  description:
-    "Analisamos milhares de vídeos do YouTube para revelar oportunidades reais: temas que performaram 3× a 100× acima da média do próprio canal. Comece grátis.",
+  title: { absolute: BRAND.metaTitle },
+  description: BRAND.metaDescription,
 };
 
 /* ============ dados das seções (copy do Relume, refinada) ============ */
@@ -157,8 +158,8 @@ export default function Home() {
       {/* Navegação */}
       <header className="sticky top-0 z-20 border-b border-hairline bg-canvas/95 backdrop-blur-sm">
         <nav className="mx-auto flex h-[64px] max-w-[1280px] items-center gap-md px-xs md:px-md">
-          <Link href="/" className="text-title-md text-ink">
-            Mapeamento Inteligente
+          <Link href="/">
+            <BrandMark />
           </Link>
           <div className="ml-auto hidden items-center gap-md md:flex">
             {[
@@ -455,7 +456,8 @@ export default function Home() {
       {/* Rodapé */}
       <footer className="border-t border-hairline">
         <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-x-md gap-y-xs px-xs py-lg text-body-sm text-muted md:px-md">
-          <span className="text-ink">Mapeamento Inteligente</span>
+          <span className="text-ink">{BRAND.name}</span>
+          <span className="hidden sm:inline">· {BRAND.descriptor}</span>
           <span>© {new Date().getFullYear()}</span>
           <div className="ml-auto flex items-center gap-md">
             <Link href="/termos" className="transition-colors hover:text-body">

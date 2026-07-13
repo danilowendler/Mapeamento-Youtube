@@ -1,4 +1,4 @@
-export const metadata = { title: "Termos de Uso · Mapeamento Inteligente" };
+export const metadata = { title: "Termos de Uso" };
 
 export default function TermosPage() {
   return (
@@ -8,7 +8,7 @@ export default function TermosPage() {
 
       <h2>1. O serviço</h2>
       <p>
-        O Mapeamento Inteligente é uma plataforma de análise de dados
+        O Sinal é uma plataforma de análise de dados
         públicos do YouTube que identifica vídeos com desempenho excepcional
         em relação ao histórico do próprio canal, ajudando criadores a
         encontrar temas com demanda comprovada. Ao criar uma conta, você

@@ -27,13 +27,13 @@ if (!process.env.STRIPE_SECRET_KEY) {
 const PLANS = [
   {
     code: "criador",
-    productName: "Mapeamento Inteligente · Criador",
+    productName: "Sinal · Criador",
     lookupKey: "criador_mensal",
     amount: 4900,
   },
   {
     code: "pro",
-    productName: "Mapeamento Inteligente · Pro",
+    productName: "Sinal · Pro",
     lookupKey: "pro_mensal",
     amount: 9900,
   },

@@ -117,7 +117,25 @@ Entregáveis:
 
 ---
 
-## M10 · Pós-lançamento imediato (contínuo)
+## M10 · Refinamento de UI/UX (pós-go-live, iterativo)
+
+> Adicionada em 12/07/2026 a pedido do time de produto. O /app receberá
+> elementos de interface selecionados pelo fundador (referências do
+> 21st.dev) + recomendações do arquiteto, aplicados **sempre traduzidos
+> para os tokens do [DESIGN-ferrari.md](../DESIGN-ferrari.md)** — nunca
+> colados com estilo alheio (roxo/gradientes/cantos arredondados de
+> bibliotecas genéricas são adaptados ou recusados).
+
+Formato de trabalho: lotes pequenos por tela (fundador indica a
+referência → arquiteto adapta ao design system → deploy → avaliação).
+Candidatos naturais: dashboard de métricas na home do app, transições
+de página, painel de detalhe do vídeo (doc 6 §6.4), comparação visual
+de canais.
+
+✅ Conclusão (por lote): componente no ar fiel aos tokens, sem
+regressão de performance (skeletons/otimista preservados).
+
+## M11 · Pós-lançamento imediato (contínuo)
 Não é milestone de construção — é regime de operação: acompanhar métricas ([doc 1, §1.7](01-visao-de-produto.md) e [doc 7, §7.5](07-monetizacao.md)), triagem de feedback, ajuste de pricing com dados reais, pedido de aumento de cota ao Google quando a fila de prioridade 1–2 represar, e priorização do roadmap pós-MVP (Pix, anual, páginas SEO do corpus, IA).
 
 ## Riscos de cronograma e válvulas de escape

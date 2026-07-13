@@ -1,7 +1,7 @@
 import { GoogleButton } from "@/features/auth/components/GoogleButton";
 import { SignUpForm } from "@/features/auth/components/SignUpForm";
 
-export const metadata = { title: "Criar conta · Mapeamento Inteligente" };
+export const metadata = { title: "Criar conta" };
 
 export default function CadastroPage() {
   return (
