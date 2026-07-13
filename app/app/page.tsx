@@ -15,7 +15,7 @@ export default async function NovaPesquisaPage() {
   const exhausted = usage.used >= usage.limit;
 
   return (
-    <div className="mx-auto flex max-w-[760px] flex-col gap-md pt-lg md:pt-xl">
+    <div className="mx-auto flex max-w-[760px] flex-col gap-md pt-lg md:pt-xl lg:max-w-[1080px]">
       <header className="flex flex-col gap-xxs">
         <span className="text-caption-upper uppercase tracking-widest text-primary">
           Central de pesquisa
