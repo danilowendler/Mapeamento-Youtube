@@ -4,9 +4,18 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/Button";
 import { FormMessage } from "@/components/FormMessage";
+import { ChatSearchInput } from "@/features/search/ChatSearchInput";
 import { parseChannelInput } from "@/utils/youtube";
 
 const MAX_CHANNELS = 20;
+
+const CHAT_EXAMPLES = [
+  "renda extra",
+  "receitas fit",
+  "inglês para viagem",
+  "@manualdomundo",
+  "culinária",
+];
 
 export type NicheOption = {
   slug: string;
@@ -27,7 +36,6 @@ type Payload =
 export function SearchForm({ niches }: { niches: NicheOption[] }) {
   const router = useRouter();
   const [raw, setRaw] = useState("");
-  const [keyword, setKeyword] = useState("");
   const [error, setError] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState<string | false>(false);
 
@@ -51,6 +59,27 @@ export function SearchForm({ niches }: { niches: NicheOption[] }) {
     [lines],
   );
   const hasInvalid = analysis.some((a) => !a.valid);
+
+  /**
+   * Roteamento determinístico da entrada de chat (M10, lote 2):
+   * @handle/URL/ID → canais; nome exato de nicho → nicho; senão keyword.
+   */
+  function sendChat(text: string) {
+    const parsed = parseChannelInput(text);
+    if (parsed && parsed.kind !== "name") {
+      submit({ mode: "channels", inputs: [text] }, "chat");
+      return;
+    }
+    const niche = niches.find(
+      (n) =>
+        n.name.localeCompare(text, "pt-BR", { sensitivity: "base" }) === 0,
+    );
+    if (niche) {
+      submit({ mode: "niche", nicheSlug: niche.slug }, "chat");
+      return;
+    }
+    submit({ mode: "keyword", keyword: text }, "chat");
+  }
 
   async function submit(payload: Payload, key: string) {
     setError(undefined);
@@ -136,35 +165,15 @@ export function SearchForm({ niches }: { niches: NicheOption[] }) {
               Palavra-chave
             </h2>
             <p className="text-body-sm text-body">
-              Digite um tema e descubra quem performa acima do normal nele.
+              Escreva como numa conversa — um tema, um @canal ou o nome de
+              um nicho.
             </p>
           </header>
-          <form
-            className="flex flex-col gap-xs"
-            onSubmit={(event) => {
-              event.preventDefault();
-              submit({ mode: "keyword", keyword }, "keyword");
-            }}
-          >
-            <div className="flex flex-col gap-xxs">
-              <label htmlFor="keyword" className="sr-only">
-                Palavra-chave ou tema
-              </label>
-              <input
-                id="keyword"
-                value={keyword}
-                onChange={(event) => setKeyword(event.target.value)}
-                placeholder="ex.: renda extra, receitas fit…"
-                className="h-[48px] rounded-sm border border-hairline bg-canvas px-xs text-body-md text-ink placeholder:text-muted"
-              />
-            </div>
-            <Button
-              type="submit"
-              disabled={Boolean(submitting) || keyword.trim().length < 2}
-            >
-              {submitting === "keyword" ? "Iniciando…" : "Mapear tema"}
-            </Button>
-          </form>
+          <ChatSearchInput
+            examples={CHAT_EXAMPLES}
+            pending={submitting === "chat"}
+            onSend={sendChat}
+          />
         </section>
 
         <section

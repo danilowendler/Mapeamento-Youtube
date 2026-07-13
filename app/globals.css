@@ -200,6 +200,26 @@ body {
   animation: badge-stamp 0.45s cubic-bezier(0.22, 1.2, 0.36, 1) forwards;
 }
 
+/* Chat de pesquisa (M10 lote 2): placeholder rotativo e bolhas */
+@keyframes chat-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-placeholder-in {
+  animation: chat-fade-in 0.35s ease forwards;
+}
+
+@utility animate-bubble-in {
+  animation: chat-fade-in 0.25s ease forwards;
+}
+
 /* Revelação suave ao entrar na viewport (via Reveal.tsx) */
 @utility reveal-hidden {
   opacity: 0;
@@ -238,5 +258,9 @@ body {
   }
   .animate-progress-sweep {
     animation-duration: 2.4s;
+  }
+  .animate-placeholder-in,
+  .animate-bubble-in {
+    animation: none;
   }
 }
