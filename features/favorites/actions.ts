@@ -12,11 +12,13 @@ export type FavoriteActionResult = {
 };
 
 /**
- * Alterna um favorito. Gate por plano no service layer (ADR-006):
- * favoritos são recurso dos planos Criador e Pro (doc 7 §7.2).
+ * Define o estado do favorito (a UI é otimista e já sabe o alvo —
+ * evita a ida extra ao banco para "descobrir" o estado atual).
+ * Gate por plano no service layer (ADR-006).
  */
-export async function toggleFavorite(
+export async function setFavorite(
   videoId: string,
+  favorited: boolean,
   searchId?: string,
 ): Promise<FavoriteActionResult> {
   const supabase = await createClient();
@@ -34,36 +36,28 @@ export async function toggleFavorite(
     };
   }
 
-  const { data: existing } = await supabase
-    .from("favorites")
-    .select("video_id")
-    .eq("video_id", videoId)
-    .maybeSingle();
-
-  if (existing) {
+  if (favorited) {
+    // Operação + evento do funil em paralelo (não sequencial)
+    const [op] = await Promise.all([
+      supabase.from("favorites").upsert(
+        { user_id: user.id, video_id: videoId, search_id: searchId ?? null },
+        { onConflict: "user_id,video_id", ignoreDuplicates: true },
+      ),
+      createAdminClient().from("product_events").insert({
+        user_id: user.id,
+        name: "opportunity_favorited",
+        properties: { video_id: videoId, search_id: searchId ?? null },
+      }),
+    ]);
+    if (op.error) return { error: "Erro ao favoritar. Tente novamente." };
+  } else {
     const { error } = await supabase
       .from("favorites")
       .delete()
       .eq("video_id", videoId);
     if (error) return { error: "Erro ao remover. Tente novamente." };
-    revalidatePath("/app/pauta");
-    return { favorited: false };
   }
 
-  const { error } = await supabase.from("favorites").insert({
-    user_id: user.id,
-    video_id: videoId,
-    search_id: searchId ?? null,
-  });
-  if (error) return { error: "Erro ao favoritar. Tente novamente." };
-
-  // Sinal do funil: oportunidade acionada (North Star, doc 1 §1.7)
-  await createAdminClient().from("product_events").insert({
-    user_id: user.id,
-    name: "opportunity_favorited",
-    properties: { video_id: videoId, search_id: searchId ?? null },
-  });
-
   revalidatePath("/app/pauta");
-  return { favorited: true };
+  return { favorited };
 }

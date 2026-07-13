@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { toggleFavorite } from "./actions";
+import { setFavorite } from "./actions";
 
 /**
  * Estrela de favorito no card de oportunidade. Para plano gratuito,
@@ -26,14 +26,21 @@ export function FavoriteButton({
     // O card inteiro é um link para o YouTube — não navegar
     event.preventDefault();
     event.stopPropagation();
+
+    // UI otimista: a estrela responde no clique; reverte se falhar
+    const next = !favorited;
+    setFavorited(next);
+
     startTransition(async () => {
-      const result = await toggleFavorite(videoId, searchId);
+      const result = await setFavorite(videoId, next, searchId);
       if (result.planGate) {
+        setFavorited(!next);
         setGateMessage(result.error ?? "");
         return;
       }
-      if (result.error) return;
-      setFavorited(result.favorited ?? false);
+      if (result.error) {
+        setFavorited(!next);
+      }
     });
   }
 

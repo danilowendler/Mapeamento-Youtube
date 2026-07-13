@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata = { title: "Histórico · Mapeamento Inteligente" };
+export const metadata = { title: "Histórico" };
 
 const STATUS: Record<string, { label: string; dot: string }> = {
   queued: { label: "Na fila", dot: "bg-muted" },

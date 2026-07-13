@@ -4,7 +4,7 @@ import type { OpportunityCard } from "@/features/results/types";
 import { createClient } from "@/lib/supabase/server";
 import { getPlanLimits } from "@/services/planService";
 
-export const metadata = { title: "Minha Pauta · Mapeamento Inteligente" };
+export const metadata = { title: "Minha Pauta" };
 
 export default async function PautaPage() {
   const supabase = await createClient();

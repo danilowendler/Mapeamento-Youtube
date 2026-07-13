@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { BRAND } from "@/lib/brand";
 import "./globals.css";
 
 const inter = Inter({
@@ -8,9 +9,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Mapeamento Inteligente",
-  description:
-    "Descubra sobre o que fazer seu próximo vídeo — oportunidades reais de conteúdo no YouTube, em minutos.",
+  title: {
+    default: BRAND.metaTitle,
+    template: `%s · ${BRAND.name}`,
+  },
+  description: BRAND.metaDescription,
 };
 
 export default function RootLayout({

@@ -6,7 +6,7 @@ import { PlanPanel } from "@/features/billing/PlanPanel";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUsage, getEffectivePlan } from "@/services/planService";
 
-export const metadata = { title: "Conta · Mapeamento Inteligente" };
+export const metadata = { title: "Conta" };
 
 export default async function ContaPage() {
   const supabase = await createClient();
