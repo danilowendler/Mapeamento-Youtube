@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { BrandMark } from "@/components/BrandMark";
@@ -29,8 +30,19 @@ export default async function AppLayout({
   const name = profile?.display_name ?? "Criador";
   const initial = name.trim().charAt(0).toUpperCase() || "•";
 
+  // Tema do shell (B6): cookie lido no servidor = zero flash. A
+  // landing fica fora do escopo do data-theme (escura por identidade).
+  const themeCookie = (await cookies()).get("bv-theme")?.value;
+  const theme =
+    themeCookie === "light" || themeCookie === "system"
+      ? themeCookie
+      : "dark";
+
   return (
-    <div className="flex min-h-screen">
+    <div
+      data-theme={theme}
+      className="flex min-h-screen bg-canvas text-body transition-colors duration-200"
+    >
       {/* Sidebar (desktop) — identidade, navegação e popover do usuário */}
       <AppSidebar
         name={name}
@@ -59,7 +71,7 @@ export default async function AppLayout({
 
       {/* Modal de Configurações (?settings=…) — substitui /app/conta */}
       <Suspense fallback={null}>
-        <SettingsModal />
+        <SettingsModal theme={theme} />
       </Suspense>
     </div>
   );

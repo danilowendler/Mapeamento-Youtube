@@ -155,7 +155,7 @@ export function AppSidebar({
           <div
             role="menu"
             aria-label="Menu do usuário"
-            className={`absolute z-20 flex flex-col gap-xxxs rounded-lg border border-hairline bg-canvas-elevated p-xxs ${
+            className={`animate-pop-in absolute z-20 flex flex-col gap-xxxs rounded-lg border border-hairline bg-canvas-elevated p-xxs ${
               collapsed
                 ? "bottom-xxs left-full ml-xxs w-[224px]"
                 : "inset-x-xxs bottom-full mb-xxs"
@@ -241,13 +241,13 @@ export function AppSidebar({
           aria-haspopup="menu"
           aria-expanded={menuOpen}
           title={collapsed ? `${name} · plano ${planName}` : undefined}
-          className={`flex w-full cursor-pointer items-center gap-xs transition-colors hover:bg-canvas-elevated/30 ${
+          className={`group flex w-full cursor-pointer items-center gap-xs transition-colors hover:bg-canvas-elevated/30 ${
             collapsed ? "justify-center p-xs" : "p-sm"
           }`}
         >
           <span
             aria-hidden="true"
-            className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full bg-canvas-elevated text-title-sm text-ink"
+            className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full bg-canvas-elevated text-title-sm text-ink transition-transform duration-150 group-active:scale-90"
           >
             {initial}
           </span>

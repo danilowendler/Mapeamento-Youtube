@@ -8,8 +8,11 @@ import {
   CreditCard,
   KeyRound,
   LogOut,
+  Monitor,
+  Moon,
   Settings2,
   Shield,
+  Sun,
   X,
 } from "lucide-react";
 import { Button } from "@/components/Button";
@@ -35,12 +38,14 @@ function isSection(value: string | null): value is SectionKey {
   return SECTIONS.some((s) => s.key === value);
 }
 
+export type ThemePref = "dark" | "light" | "system";
+
 /**
  * Modal de Configurações (M10.5, lote B2) — substitui a página
  * /app/conta. Controlado pela query `?settings=<seção>` (linkável:
  * paywalls apontam para ?settings=plano). Dados carregados ao abrir.
  */
-export function SettingsModal() {
+export function SettingsModal({ theme }: { theme: ThemePref }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -151,7 +156,7 @@ export function SettingsModal() {
             </div>
           ) : (
             <>
-              {section === "geral" && <GeralSection />}
+              {section === "geral" && <GeralSection theme={theme} />}
               {section === "perfil" && <PerfilSection data={data} />}
               {section === "plano" && <PlanPanel plan={data.plan} />}
               {section === "conta" && <ContaSection />}
@@ -174,13 +179,47 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-function GeralSection() {
+const THEME_OPTIONS = [
+  { value: "dark", label: "Escuro", icon: Moon },
+  { value: "light", label: "Claro", icon: Sun },
+  { value: "system", label: "Sistema", icon: Monitor },
+] as const;
+
+/** Cookie lido pelo layout no servidor → próximo render já vem certo. */
+function persistThemeCookie(next: ThemePref) {
+  document.cookie = `bv-theme=${next}; path=/; max-age=31536000; SameSite=Lax`;
+}
+
+function GeralSection({ theme }: { theme: ThemePref }) {
+  const router = useRouter();
+  const [current, setCurrent] = useState<ThemePref>(theme);
+
+  function apply(next: ThemePref) {
+    setCurrent(next);
+    persistThemeCookie(next);
+    router.refresh();
+  }
+
   return (
     <div className="flex flex-col">
       <Row label="Aparência">
-        Escuro
-        <span className="rounded-full border border-hairline px-xxs text-caption text-muted-soft">
-          claro e sistema em breve
+        <span className="flex items-center gap-xxxs">
+          {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => apply(value)}
+              aria-pressed={current === value}
+              className={`flex cursor-pointer items-center gap-xxxs rounded-full border px-xxs py-xxxs text-caption transition-colors ${
+                current === value
+                  ? "border-muted text-ink"
+                  : "border-hairline text-body hover:text-ink"
+              }`}
+            >
+              <Icon size={13} strokeWidth={1.6} />
+              {label}
+            </button>
+          ))}
         </span>
       </Row>
       <Row label="Idioma">Português (Brasil)</Row>
