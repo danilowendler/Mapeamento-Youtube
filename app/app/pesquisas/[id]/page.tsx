@@ -184,7 +184,7 @@ export default async function ResultadosPage({
               </a>
             ) : (
               <Link
-                href="/app/conta#planos"
+                href="/app?settings=plano"
                 title="Exportação disponível nos planos Criador e Pro"
                 className="inline-flex h-[36px] shrink-0 items-center gap-xxxs rounded-sm border border-hairline px-xs text-caption-upper uppercase text-muted-soft hover:text-body"
               >

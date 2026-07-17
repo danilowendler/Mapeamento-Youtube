@@ -20,7 +20,8 @@ export function isActive(href: string, pathname: string): boolean {
 
 const MOBILE_LINKS = [
   ...NAV_LINKS,
-  { href: "/app/conta", label: "Settings" },
+  // Query relativa: abre o modal de Configurações sobre a página atual
+  { href: "?settings=geral", label: "Settings" },
 ] as const;
 
 /** Barra inferior (mobile). */

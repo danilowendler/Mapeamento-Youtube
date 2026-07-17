@@ -29,7 +29,7 @@ export async function GET(
     return NextResponse.json(
       {
         error:
-          "Exportação disponível nos planos Criador e Pro. Veja /app/conta.",
+          "Exportação disponível nos planos Criador e Pro. Veja seu plano em Configurações.",
       },
       { status: 403 },
     );

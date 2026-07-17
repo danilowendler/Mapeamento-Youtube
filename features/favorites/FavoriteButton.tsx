@@ -67,7 +67,7 @@ export function FavoriteButton({
           <span className="block text-body-sm text-ink">{gateMessage}</span>
           <span className="mt-xxs flex items-center gap-xs">
             <Link
-              href="/app/conta#planos"
+              href="/app?settings=plano"
               className="text-body-sm text-primary"
               onClick={(event) => event.stopPropagation()}
             >

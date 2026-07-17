@@ -181,7 +181,7 @@ export function AppSidebar({
             {isFree && (
               <Link
                 role="menuitem"
-                href="/app/conta#planos"
+                href={`${pathname}?settings=plano`}
                 onClick={() => setMenuOpen(false)}
                 className={`${menuItemClass} text-ink`}
               >
@@ -191,27 +191,25 @@ export function AppSidebar({
             )}
             <Link
               role="menuitem"
-              href="/app/conta"
+              href={`${pathname}?settings=perfil`}
               onClick={() => setMenuOpen(false)}
               className={menuItemClass}
             >
               <CircleUser size={18} strokeWidth={1.6} />
               Perfil
             </Link>
-            <span
+            <Link
               role="menuitem"
-              aria-disabled="true"
-              className="flex items-center gap-xxs rounded-sm px-xs py-xxs text-body-sm text-muted"
+              href={`${pathname}?settings=geral`}
+              onClick={() => setMenuOpen(false)}
+              className={menuItemClass}
             >
               <Palette size={18} strokeWidth={1.6} />
               Personalização
-              <span className="ml-auto rounded-full border border-hairline px-xxs text-caption text-muted-soft">
-                em breve
-              </span>
-            </span>
+            </Link>
             <Link
               role="menuitem"
-              href="/app/conta"
+              href={`${pathname}?settings=geral`}
               onClick={() => setMenuOpen(false)}
               className={menuItemClass}
             >

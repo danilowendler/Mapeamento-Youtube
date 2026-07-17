@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { BrandMark } from "@/components/BrandMark";
+import { SettingsModal } from "@/features/settings/SettingsModal";
 import { AppNavMobile } from "@/features/shell/AppNav";
 import { AppSidebar } from "@/features/shell/AppSidebar";
 import { createClient } from "@/lib/supabase/server";
@@ -54,6 +56,11 @@ export default async function AppLayout({
       </div>
 
       <AppNavMobile />
+
+      {/* Modal de Configurações (?settings=…) — substitui /app/conta */}
+      <Suspense fallback={null}>
+        <SettingsModal />
+      </Suspense>
     </div>
   );
 }

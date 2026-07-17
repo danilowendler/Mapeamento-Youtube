@@ -42,8 +42,8 @@ export async function createCheckoutSession(
       ? { customer: existing.stripe_customer_id }
       : { customer_email: email }),
     subscription_data: { metadata: { user_id: userId } },
-    success_url: `${appUrl()}/app/conta?checkout=sucesso`,
-    cancel_url: `${appUrl()}/app/conta?checkout=cancelado`,
+    success_url: `${appUrl()}/app?settings=plano&checkout=sucesso`,
+    cancel_url: `${appUrl()}/app?settings=plano&checkout=cancelado`,
     locale: "pt-BR",
   });
 
@@ -67,7 +67,7 @@ export async function createPortalSession(userId: string): Promise<string> {
 
   const session = await stripe.billingPortal.sessions.create({
     customer: sub.stripe_customer_id,
-    return_url: `${appUrl()}/app/conta`,
+    return_url: `${appUrl()}/app?settings=plano`,
   });
   return session.url;
 }
