@@ -44,7 +44,7 @@ export function ChatSearchInput({
         </div>
       )}
 
-      <div className="flex items-center gap-xxs rounded-lg border border-hairline bg-canvas-elevated/25 p-xxs transition-colors focus-within:border-muted">
+      <div className="flex items-center gap-xxs rounded-lg border border-hairline bg-canvas-elevated/25 p-xxs transition-[border-color,box-shadow,transform] duration-200 focus-within:-translate-y-[1px] focus-within:border-muted focus-within:shadow-[0_0_0_3px_rgba(255,255,255,0.05)]">
         <Search
           size={18}
           strokeWidth={1.6}
@@ -63,7 +63,7 @@ export function ChatSearchInput({
           disabled={pending}
           placeholder={placeholder}
           aria-label="O que você quer mapear? Tema, palavra-chave, @canal ou nicho"
-          className="h-[44px] w-full min-w-0 flex-1 bg-transparent px-xxs text-body-md text-ink placeholder:text-muted disabled:opacity-50"
+          className="h-[44px] w-full min-w-0 flex-1 bg-transparent px-xxs text-body-md text-ink placeholder:text-muted focus-visible:outline-none disabled:opacity-50"
         />
         <button
           type="button"

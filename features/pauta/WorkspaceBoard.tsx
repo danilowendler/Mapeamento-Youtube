@@ -8,9 +8,7 @@ import {
   Bookmark,
   Check,
   ChevronDown,
-  Folder,
   FolderInput,
-  FolderOpen,
   Plus,
   Star,
   Undo2,
@@ -54,6 +52,36 @@ const KIND_LABEL: Record<FolderKind, string> = {
   pautas: "Pautas",
   referencias: "Referências",
 };
+
+/**
+ * Glifo de pasta do Workspace: corpo em duas camadas sobre os tokens
+ * do canvas + etiqueta colorida que declara o tipo (cinza = Pautas,
+ * azul = Referências). Selecionada, a frente "abre" clareando.
+ */
+function FolderGlyph({ kind, open }: { kind: FolderKind; open: boolean }) {
+  const accent =
+    kind === "referencias"
+      ? "var(--color-data-series)"
+      : "var(--color-muted-soft)";
+  return (
+    <svg width="48" height="38" viewBox="0 0 48 38" aria-hidden="true">
+      {/* corpo (trás, com a aba) */}
+      <path
+        d="M3 8a3 3 0 0 1 3-3h11l4 4h21a3 3 0 0 1 3 3v18a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V8Z"
+        fill="var(--color-canvas-elevated)"
+        stroke={open ? "var(--color-muted)" : "var(--color-hairline)"}
+      />
+      {/* frente — clareia quando a pasta está aberta/selecionada */}
+      <path
+        d="M3 14h42v13a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V14Z"
+        fill={open ? "var(--color-muted)" : "var(--color-canvas)"}
+        fillOpacity={open ? 0.4 : 0.45}
+      />
+      {/* etiqueta: a cor diz o tipo da pasta */}
+      <rect x="9" y="22" width="15" height="3.5" rx="1.75" fill={accent} />
+    </svg>
+  );
+}
 const KIND_FOR_TYPE: Record<DragItem["type"], FolderKind> = {
   video: "pautas",
   channel: "referencias",
@@ -326,7 +354,7 @@ export function WorkspaceBoard({
             onChange={(event) => setNewName(event.target.value)}
             maxLength={40}
             placeholder="Nome da nova pasta"
-            className="h-[40px] w-full max-w-[320px] rounded-sm border border-hairline bg-canvas px-xxs text-body-md text-ink placeholder:text-muted"
+            className="h-[40px] w-full max-w-[320px] rounded-sm border border-hairline bg-canvas px-xxs text-body-md text-ink transition-[border-color,box-shadow] duration-200 placeholder:text-muted focus:border-muted focus:shadow-[0_0_0_3px_rgba(255,255,255,0.05)] focus-visible:outline-none"
           />
           <button
             type="button"
@@ -387,12 +415,12 @@ export function WorkspaceBoard({
                           setSelectedId(isSelected ? null : folder.id)
                         }
                         {...folderDropProps(folder)}
-                        className={`flex w-full cursor-pointer flex-col items-center gap-xxxs rounded-md border p-xs text-center transition-colors ${
+                        className={`group flex w-full cursor-pointer flex-col items-center gap-xxs rounded-md border p-xs pt-sm text-center transition-[border-color,background-color,transform] duration-200 ${
                           isDrop
                             ? "border-data-series bg-data-series/10"
                             : isSelected
                               ? "border-muted bg-canvas-elevated/40"
-                              : "border-hairline bg-canvas hover:border-muted"
+                              : "border-hairline bg-canvas hover:-translate-y-[2px] hover:border-muted"
                         } ${rejected ? "opacity-40" : ""}`}
                         title={
                           rejected
@@ -404,27 +432,15 @@ export function WorkspaceBoard({
                             : undefined
                         }
                       >
-                        {isSelected ? (
-                          <FolderOpen
-                            size={28}
-                            strokeWidth={1.4}
-                            className="text-body"
-                          />
-                        ) : (
-                          <Folder
-                            size={28}
-                            strokeWidth={1.4}
-                            className="text-body"
-                          />
-                        )}
-                        <span className="w-full truncate text-body-sm text-ink">
+                        <FolderGlyph kind={folder.kind} open={isSelected} />
+                        <span className="w-full truncate text-title-sm text-ink">
                           {folder.name}
                         </span>
                         <span
-                          className={`text-caption-upper uppercase ${
+                          className={`rounded-full border px-xxs py-[2px] text-caption-upper uppercase ${
                             folder.kind === "referencias"
-                              ? "text-data-series"
-                              : "text-muted-soft"
+                              ? "border-data-series/40 text-data-series"
+                              : "border-hairline text-muted-soft"
                           }`}
                         >
                           {KIND_LABEL[folder.kind]} · {countOf(folder)}
@@ -489,28 +505,39 @@ export function WorkspaceBoard({
                     key={video.videoId}
                     {...dragProps({ type: "video", id: video.videoId })}
                     title="Arraste para uma pasta de Pautas"
-                    className={`flex cursor-grab flex-col rounded-md border border-hairline bg-canvas transition-colors hover:border-muted active:cursor-grabbing ${
+                    className={`group flex cursor-grab flex-col rounded-md border border-hairline bg-canvas transition-colors hover:border-muted active:cursor-grabbing ${
                       dragging?.id === video.videoId ? "opacity-50" : ""
                     }`}
                   >
-                    <div className="relative aspect-video w-full overflow-hidden rounded-t-md bg-canvas-elevated">
+                    <a
+                      href={`https://www.youtube.com/watch?v=${video.videoId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Assistir no YouTube"
+                      className="relative block aspect-video w-full overflow-hidden rounded-t-md bg-canvas-elevated"
+                    >
                       {video.thumbnailUrl && (
                         <Image
                           src={video.thumbnailUrl}
                           alt=""
                           fill
                           sizes="(max-width: 768px) 50vw, 220px"
-                          className="object-cover"
+                          className="object-cover transition-transform duration-200 group-hover:scale-[1.02]"
                         />
                       )}
                       <span className="absolute right-xxs top-xxs">
                         <ScoreBadge score={video.score} />
                       </span>
-                    </div>
+                    </a>
                     <div className="flex flex-1 flex-col gap-xxxs p-xxs">
-                      <p className="line-clamp-2 text-body-sm text-ink">
+                      <a
+                        href={`https://www.youtube.com/watch?v=${video.videoId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="line-clamp-2 text-body-sm text-ink hover:underline"
+                      >
                         {video.title}
-                      </p>
+                      </a>
                       <p className="truncate text-caption text-muted">
                         {video.channelTitle}
                       </p>
@@ -539,8 +566,14 @@ export function WorkspaceBoard({
                       dragging?.id === channel.channelId ? "opacity-50" : ""
                     }`}
                   >
-                    <div className="flex items-center gap-xxs">
-                      <div className="relative h-[36px] w-[36px] shrink-0 overflow-hidden rounded-full bg-canvas-elevated">
+                    <a
+                      href={`https://www.youtube.com/channel/${channel.channelId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Abrir canal no YouTube"
+                      className="flex items-center gap-xxs"
+                    >
+                      <span className="relative block h-[36px] w-[36px] shrink-0 overflow-hidden rounded-full bg-canvas-elevated">
                         {channel.thumbnailUrl ? (
                           <Image
                             src={channel.thumbnailUrl}
@@ -554,18 +587,18 @@ export function WorkspaceBoard({
                             {channel.title.charAt(0).toUpperCase()}
                           </span>
                         )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="line-clamp-1 text-body-sm text-ink">
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="line-clamp-1 block text-body-sm text-ink hover:underline">
                           {channel.title}
-                        </p>
-                        <p className="text-caption text-muted">
+                        </span>
+                        <span className="block text-caption text-muted">
                           {channel.subscriberCount !== null
                             ? `${formatCompactCount(channel.subscriberCount)} inscritos`
                             : "canal de referência"}
-                        </p>
-                      </div>
-                    </div>
+                        </span>
+                      </span>
+                    </a>
                     <div className="flex items-center justify-between gap-xxs">
                       <span className="rounded-full border border-hairline px-xxs text-caption-upper uppercase text-data-series">
                         canal
@@ -628,9 +661,19 @@ export function WorkspaceBoard({
                         className="flex items-center justify-between gap-xxs border-b border-hairline pb-xxs"
                       >
                         <div className="min-w-0">
-                          <p className="line-clamp-1 text-body-sm text-ink">
+                          <a
+                            href={
+                              isVideo
+                                ? `https://www.youtube.com/watch?v=${item.videoId}`
+                                : `https://www.youtube.com/channel/${item.channelId}`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Abrir no YouTube"
+                            className="line-clamp-1 text-body-sm text-ink hover:underline"
+                          >
                             {item.title}
-                          </p>
+                          </a>
                           <p className="truncate text-caption text-muted">
                             {isVideo
                               ? item.channelTitle
