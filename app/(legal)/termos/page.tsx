@@ -1,3 +1,5 @@
+import { BRAND } from "@/lib/brand";
+
 export const metadata = { title: "Termos de Uso" };
 
 export default function TermosPage() {
@@ -8,7 +10,7 @@ export default function TermosPage() {
 
       <h2>1. O serviço</h2>
       <p>
-        O Sinal é uma plataforma de análise de dados
+        O {BRAND.name} é uma plataforma de análise de dados
         públicos do YouTube que identifica vídeos com desempenho excepcional
         em relação ao histórico do próprio canal, ajudando criadores a
         encontrar temas com demanda comprovada. Ao criar uma conta, você

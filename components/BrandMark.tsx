@@ -38,7 +38,7 @@ export function BrandMark({
     <span className="flex items-center gap-xxs">
       <BrandGlyph size={18} />
       <span className="leading-none">
-        <span className="block text-title-sm font-bold uppercase tracking-[3px] text-ink">
+        <span className="block text-title-sm font-bold uppercase tracking-[2px] text-ink">
           {BRAND.name}
         </span>
         {withDescriptor && (

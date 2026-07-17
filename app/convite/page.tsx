@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { RedeemInviteForm } from "@/features/beta/RedeemInviteForm";
+import { BRAND } from "@/lib/brand";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Convite" };
@@ -19,7 +20,7 @@ export default async function ConvitePage() {
       <main className="flex w-full max-w-[400px] flex-col gap-sm">
         <h1 className="text-display-md text-ink">Beta fechado</h1>
         <p className="text-body-md text-body">
-          O Sinal está em beta fechado. Informe seu código de
+          O {BRAND.name} está em beta fechado. Informe seu código de
           convite para entrar.
         </p>
         <RedeemInviteForm />
