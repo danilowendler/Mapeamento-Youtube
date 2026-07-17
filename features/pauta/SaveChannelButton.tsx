@@ -13,9 +13,12 @@ import { setChannelRef } from "@/features/pauta/actions";
 export function SaveChannelButton({
   channelId,
   initialSaved,
+  labeled = false,
 }: {
   channelId: string;
   initialSaved: boolean;
+  /** true = botão-pílula com texto "salvar/salvo" (didático). */
+  labeled?: boolean;
 }) {
   const [saved, setSaved] = useState(initialSaved);
   const [message, setMessage] = useState<string | null>(null);
@@ -33,26 +36,35 @@ export function SaveChannelButton({
     }
   }
 
+  const title = saved
+    ? "Remover canal das referências do Workspace"
+    : "Salvar canal como referência (vai para o Workspace)";
+
   return (
     <span className="relative inline-flex">
       <button
         type="button"
         onClick={toggle}
         aria-pressed={saved}
-        title={
-          saved
-            ? "Remover canal das referências"
-            : "Salvar canal como referência (vai para o Workspace)"
+        title={title}
+        className={
+          labeled
+            ? `flex cursor-pointer items-center gap-xxxs rounded-full border px-xxs py-xxxs text-caption transition-colors ${
+                saved
+                  ? "border-data-series/60 text-data-series"
+                  : "border-hairline text-body hover:border-muted hover:text-ink"
+              }`
+            : `cursor-pointer px-xxxs transition-colors ${
+                saved ? "text-data-series" : "text-muted hover:text-ink"
+              }`
         }
-        className={`cursor-pointer px-xxxs transition-colors ${
-          saved ? "text-data-series" : "text-muted hover:text-ink"
-        }`}
       >
         <Bookmark
-          size={16}
+          size={labeled ? 12 : 16}
           strokeWidth={1.6}
           fill={saved ? "currentColor" : "none"}
         />
+        {labeled && (saved ? "salvo" : "salvar")}
       </button>
 
       {message && (

@@ -127,17 +127,32 @@ export default async function ResultadosPage({
     });
   }
 
-  // Canais já salvos como referência (RLS filtra por dono) — B5
+  // Canais relacionados via corpus — só quando a pesquisa terminou
+  const isDone = ["completed", "partial"].includes(search.status);
+  const related =
+    isDone && readyChannelIds.length > 0
+      ? await findRelatedChannels(readyChannelIds)
+      : [];
+
+  // Canais já salvos como referência (RLS filtra por dono) — cobre os
+  // chips analisados e os relacionados numa consulta só (B5)
+  const savedLookupIds = [
+    ...new Set([...allChannelIds, ...related.map((r) => r.channelId)]),
+  ];
   const { data: savedRows } =
-    allChannelIds.length > 0
+    savedLookupIds.length > 0
       ? await supabase
           .from("channel_refs")
           .select("channel_id")
-          .in("channel_id", allChannelIds)
+          .in("channel_id", savedLookupIds)
       : { data: [] };
   const savedChannelIds = new Set(
     (savedRows ?? []).map((row) => row.channel_id),
   );
+  const relatedWithSaved = related.map((channel) => ({
+    ...channel,
+    saved: savedChannelIds.has(channel.channelId),
+  }));
 
   const chips: ChannelChip[] = (results ?? []).map((result) => ({
     channelId: result.channel_id,
@@ -156,13 +171,6 @@ export default async function ResultadosPage({
   }));
 
   const failedInputs = (search.failed_inputs ?? []) as string[];
-
-  // Canais relacionados via corpus — só quando a pesquisa terminou
-  const isDone = ["completed", "partial"].includes(search.status);
-  const related =
-    isDone && readyChannelIds.length > 0
-      ? await findRelatedChannels(readyChannelIds)
-      : [];
 
   // Favoritos do usuário entre os vídeos exibidos (RLS filtra por dono)
   const { data: favoriteRows } =
@@ -242,7 +250,7 @@ export default async function ResultadosPage({
         />
       )}
 
-      <RelatedChannels related={related} />
+      <RelatedChannels related={relatedWithSaved} />
     </div>
   );
 }
