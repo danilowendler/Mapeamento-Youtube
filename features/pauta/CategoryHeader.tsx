@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { deleteCategory, renameCategory } from "@/features/pauta/actions";
 
@@ -13,12 +14,16 @@ export function CategoryHeader({
   name,
   count,
   noun = ["ideia", "ideias"],
+  afterDeleteHref,
 }: {
   id: string;
   name: string;
   count: number;
   noun?: [string, string];
+  /** Rota para onde navegar após excluir (página dedicada da pasta). */
+  afterDeleteHref?: string;
 }) {
+  const router = useRouter();
   const [mode, setMode] = useState<"view" | "rename" | "confirm-delete">(
     "view",
   );
@@ -42,7 +47,11 @@ export function CategoryHeader({
     setError(undefined);
     startTransition(async () => {
       const result = await deleteCategory(id);
-      if (result.error) setError(result.error);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      if (afterDeleteHref) router.push(afterDeleteHref);
     });
   }
 
