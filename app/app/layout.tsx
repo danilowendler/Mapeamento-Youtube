@@ -63,7 +63,7 @@ export default async function AppLayout({
           <Link href="/app">
             <BrandMark />
           </Link>
-          <span className="border border-hairline px-xxs py-xxxs text-caption-upper uppercase text-muted-soft">
+          <span className="rounded-full border border-hairline px-xxs py-xxxs text-caption-upper uppercase text-muted-soft">
             {plan.name}
           </span>
         </header>

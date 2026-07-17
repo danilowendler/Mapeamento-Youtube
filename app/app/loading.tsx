@@ -14,11 +14,11 @@ export default function AppLoading() {
         <div className="h-[36px] w-[360px] max-w-full bg-canvas-elevated" />
         <div className="h-[16px] w-[480px] max-w-full bg-canvas-elevated" />
       </div>
-      <div className="h-[40px] w-full bg-canvas-elevated" />
+      <div className="h-[40px] w-full rounded-md bg-canvas-elevated" />
       <div className="flex flex-col gap-xs">
-        <div className="h-[92px] w-full border border-hairline bg-canvas-elevated/40" />
-        <div className="h-[92px] w-full border border-hairline bg-canvas-elevated/40" />
-        <div className="h-[92px] w-full border border-hairline bg-canvas-elevated/40" />
+        <div className="h-[92px] w-full rounded-md border border-hairline bg-canvas-elevated/40" />
+        <div className="h-[92px] w-full rounded-md border border-hairline bg-canvas-elevated/40" />
+        <div className="h-[92px] w-full rounded-md border border-hairline bg-canvas-elevated/40" />
       </div>
     </div>
   );

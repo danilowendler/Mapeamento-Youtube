@@ -21,7 +21,7 @@ export function LoginForm({ next, erro }: { next?: string; erro?: string }) {
 
   return (
     <form action={formAction} className="flex flex-col gap-sm">
-      <h1 className="text-display-md text-ink">Entrar</h1>
+      <h1 className="font-display text-display-md text-ink">Entrar</h1>
       <FormMessage error={state.error ?? externalError} />
       {next ? <input type="hidden" name="next" value={next} /> : null}
       <Input

@@ -16,7 +16,7 @@ export function WeeklyActivity({ weeks }: { weeks: WeekBucket[] }) {
   return (
     <section
       aria-label="Atividade das últimas 8 semanas"
-      className="flex flex-col gap-sm border border-hairline p-sm"
+      className="flex flex-col gap-sm rounded-md border border-hairline p-sm"
     >
       <h2 className="text-caption-upper uppercase text-muted-soft">
         Atividade · últimas 8 semanas
@@ -112,7 +112,7 @@ function Panel({
             >
               <span
                 role="tooltip"
-                className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-xxxs hidden -translate-x-1/2 whitespace-nowrap border border-hairline bg-canvas-elevated px-xxs py-xxxs text-caption group-hover:block group-focus-within:block"
+                className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-xxxs hidden -translate-x-1/2 whitespace-nowrap rounded-sm border border-hairline bg-canvas-elevated px-xxs py-xxxs text-caption group-hover:block group-focus-within:block"
               >
                 <strong className="font-semibold text-ink">{value}</strong>{" "}
                 <span className="text-body">

@@ -16,15 +16,15 @@ export default async function PautaPage() {
   if (!limits.favorites) {
     return (
       <div className="mx-auto flex max-w-[720px] flex-col gap-sm pt-xl">
-        <h1 className="text-display-lg text-ink">Minha Pauta</h1>
-        <div className="flex flex-col gap-xs border border-hairline p-sm">
+        <h1 className="font-display text-display-lg text-ink">Minha Pauta</h1>
+        <div className="flex flex-col gap-xs rounded-md border border-hairline p-sm">
           <p className="text-body-md text-body">
             Salve as melhores oportunidades e monte a pauta dos seus próximos
             vídeos — disponível nos planos Criador e Pro.
           </p>
           <Link
             href="/app/conta#planos"
-            className="inline-flex h-[48px] w-fit items-center bg-primary px-md text-button-label uppercase text-on-primary active:bg-primary-active"
+            className="inline-flex h-[48px] w-fit items-center rounded-sm bg-primary px-md text-button-label uppercase text-on-primary active:bg-primary-active"
           >
             Ver planos
           </Link>
@@ -112,7 +112,7 @@ export default async function PautaPage() {
   return (
     <div className="mx-auto flex max-w-[860px] flex-col gap-md pt-xl">
       <header className="flex flex-col gap-xxs">
-        <h1 className="text-display-lg text-ink">Minha Pauta</h1>
+        <h1 className="font-display text-display-lg text-ink">Minha Pauta</h1>
         <p className="text-body-md text-body">
           As oportunidades que você salvou — a matéria-prima dos próximos
           vídeos.
@@ -122,7 +122,7 @@ export default async function PautaPage() {
       <NewCategoryForm />
 
       {cards.length === 0 && options.length === 0 ? (
-        <p className="border border-dashed border-hairline p-sm text-body-md text-body">
+        <p className="rounded-md border border-dashed border-hairline p-sm text-body-md text-body">
           Nada salvo ainda — clique na ☆ de qualquer oportunidade para
           adicioná-la aqui.
         </p>

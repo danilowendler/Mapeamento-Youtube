@@ -181,7 +181,7 @@ export function ResultsView({
       </div>
 
       {visible.length === 0 ? (
-        <p className="border border-dashed border-hairline p-sm text-body-md text-body">
+        <p className="rounded-md border border-dashed border-hairline p-sm text-body-md text-body">
           Nenhum vídeo neste formato com os filtros atuais — ajuste o score
           mínimo ou os demais filtros.
         </p>

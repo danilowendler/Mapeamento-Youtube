@@ -280,10 +280,10 @@ The brand's strongest visual signature is the **full-bleed cinematic hero photog
 **Key Characteristics:**
 - Single accent: `{colors.primary}` (Rosso Corsa #da291c) for primary CTAs, the Cavallino, F1 race-position highlights. Used scarcely.
 - Near-black canvas (#181818) — never pure black. White-canvas bands only inside editorial contexts.
-- Single sans family: FerrariSans across every text role.
-- Display weight stays at 500 — never bold.
+- Sans family (Inter) across UI, body and numbers; **v2 (17/07/2026, decisão do time BEVIEWER):** a escala display (títulos/saudações) usa uma **serif display** em peso 400 — família em definição via teste `/app/fontes` (padrão provisório: Instrument Serif).
+- Display weight: sans 500 / serif 400 — never bold.
 - CTA labels render uppercase with 1.4px tracking.
-- Sharp `{rounded.none}` (0px) corners on every CTA, card, and band — luxury-automotive precision.
+- **v2 (17/07/2026):** cantos retos deixaram de ser regra — geometria suave: `sm` 8px em inputs/botões, `md` 12px em cards, `lg` 16px em popovers/modais, pill em chips.
 - Full-bleed cinematic hero photography is the page chrome.
 - Explicit 8px spacing token ladder with named scale (xxxs through super).
 - Hairlines + photographic depth — no drop shadow tiers.
@@ -391,19 +391,19 @@ The system uses **photographic depth + brightness-step** elevation. No drop shad
 
 ## Shapes
 
-### Border Radius Scale
+### Border Radius Scale (v2 — 17/07/2026)
 
 | Token | Value | Use |
 |---|---|---|
-| `{rounded.none}` | 0px | Every CTA, card, band — dominant radius |
-| `{rounded.xs}` | 2px | Tight badges (rare) |
-| `{rounded.sm}` | 4px | Form inputs |
-| `{rounded.md}` | 6px | Compact cards (rare) |
-| `{rounded.lg}` | 8px | Mobile-only collapse cards |
-| `{rounded.xl}` | 12px | Modal/dialog corners (rare) |
-| `{rounded.full}` | 9999px | Avatar plates, badge pills |
+| `{rounded.none}` | 0px | Bandas full-bleed e divisores apenas |
+| `{rounded.xs}` | 4px | Badges e micro-chips |
+| `{rounded.sm}` | 8px | Inputs, botões, CTAs |
+| `{rounded.md}` | 12px | Cards, tiles, painéis |
+| `{rounded.lg}` | 16px | Popovers, modais |
+| `{rounded.xl}` | 20px | Superfícies flutuantes grandes (rare) |
+| `{rounded.full}` | 9999px | Avatar plates, chips, pills |
 
-The radius vocabulary is **sharp by default**. Sharp 0px corners are the brand button shape — never rounded pills. Pill geometry is reserved for badge labels only.
+**v2 (17/07/2026):** o vocabulário deixou de ser sharp-by-default — o time BEVIEWER adotou geometria suave em todo o app. 0px permanece apenas em bandas full-bleed e divisores.
 
 ## Components
 
@@ -415,11 +415,11 @@ The radius vocabulary is **sharp by default**. Sharp 0px corners are the brand b
 
 ### Buttons
 
-**`button-primary`** — The signature Rosso Corsa CTA. Background `{colors.primary}`, text `{colors.on-primary}`, type `{typography.button}` (14px / 700 / 1.4px tracking, uppercase), padding 14px × 32px, height 48px, **rounded `{rounded.none}` (0px — sharp corners)**.
+**`button-primary`** — The signature Rosso Corsa CTA. Background `{colors.primary}`, text `{colors.on-primary}`, type `{typography.button}` (14px / 700 / 1.4px tracking, uppercase), padding 14px × 32px, height 48px, **rounded `{rounded.sm}` (8px — v2)**.
 
 **`button-primary-active`** — Press state. Background `{colors.primary-active}`.
 
-**`button-outline-on-dark`** — Transparent with 1px white border. Background transparent, text `{colors.ink}`, 1px white border, same sharp 0px corners.
+**`button-outline-on-dark`** — Transparent with 1px white border. Background transparent, text `{colors.ink}`, 1px white border, same `{rounded.sm}` corners.
 
 **`button-outline-on-light`** — Transparent with 1px ink border on light bands.
 
@@ -475,7 +475,7 @@ The radius vocabulary is **sharp by default**. Sharp 0px corners are the brand b
 
 ### Do
 - Reserve `{colors.primary}` (Rosso Corsa) for primary CTAs, the Cavallino mark, and F1 race-position highlights.
-- Set every CTA at `{rounded.none}` (0px sharp corners) — the brand's signature precision.
+- Set CTAs at `{rounded.sm}` (8px), cards at `{rounded.md}` (12px) — geometria suave v2.
 - Render CTA labels in uppercase with 1.4px tracking via `{typography.button}`.
 - Pair every hero with a full-bleed cinematic photograph — the photograph IS the depth.
 - Use the explicit 8px spacing ladder (`xxxs` through `super`) rather than ad-hoc px values.
@@ -483,8 +483,8 @@ The radius vocabulary is **sharp by default**. Sharp 0px corners are the brand b
 
 ### Don't
 - Don't introduce a saturated brand color other than Rosso Corsa.
-- Don't use rounded or pill CTAs — sharp 0px corners are the brand button.
-- Don't bold display copy. The cinematic photography does the visual heavy-lifting.
+- Don't exceed the radius scale (nothing above `{rounded.xl}` fora de pills) nem misturar raios num mesmo grupo de componentes.
+- Don't bold display copy (sans 500 / serif 400). The cinematic photography does the visual heavy-lifting.
 - Don't use Hypersail yellow outside the Hypersail sailing program context.
 - Don't use pure black canvas. The brand canvas is `{colors.canvas}` (#181818) — slightly warm.
 - Don't add drop shadow tiers. Photography + brightness-step elevation carry the depth.
@@ -514,7 +514,7 @@ The radius vocabulary is **sharp by default**. Sharp 0px corners are the brand b
 ## Iteration Guide
 
 1. Focus on a single component at a time.
-2. CTAs default to `{rounded.none}` (0px sharp). Cards use `{rounded.none}` too. Pill is reserved for badges.
+2. CTAs default to `{rounded.sm}` (8px); cards to `{rounded.md}` (12px). Pill for chips/badges (v2).
 3. Variants live as separate entries inside `components:`.
 4. Use `{token.refs}` everywhere — never inline hex.
 5. Hover state never documented.

@@ -109,12 +109,27 @@
   --spacing-xxl: 96px;
   --spacing-super: 128px;
 
-  /* ---- Raio · sharp por padrão ---- */
-  --radius-xs: 2px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
+  /* ---- Raio · geometria suave (v2, 17/07/2026) ----
+     Decisão do time BEVIEWER: cantos retos deixaram de ser regra.
+     sm = inputs/botões · md = cards · lg = popovers/modais. */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+}
+
+/* Serif display (v2): só na escala display-* de títulos/saudações —
+   UI, corpo e números seguem na Inter. Peso 400 (serifs não recebem
+   o 500 da Inter). Família provisória: Instrument Serif, até o teste
+   em /app/fontes ser batido pelo time. */
+:root {
+  --font-display-family: var(--font-instrument-serif), Georgia, serif;
+}
+
+@utility font-display {
+  font-family: var(--font-display-family);
+  font-weight: 400;
 }
 
 body {

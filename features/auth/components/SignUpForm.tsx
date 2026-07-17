@@ -14,7 +14,7 @@ export function SignUpForm() {
 
   return (
     <form action={formAction} className="flex flex-col gap-sm">
-      <h1 className="text-display-md text-ink">Criar conta</h1>
+      <h1 className="font-display text-display-md text-ink">Criar conta</h1>
       <FormMessage error={state.error} success={state.success} />
       <Input
         id="displayName"
