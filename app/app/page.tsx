@@ -49,7 +49,7 @@ export default async function NovaPesquisaPage() {
             muito mais — e suas pesquisas anteriores seguem no histórico.
           </p>
           <a
-            href="/app/conta#planos"
+            href="/app?settings=plano"
             className="inline-flex h-[48px] w-fit items-center rounded-sm bg-primary px-md text-button-label uppercase text-on-primary active:bg-primary-active"
           >
             Ver planos

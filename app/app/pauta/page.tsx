@@ -23,7 +23,7 @@ export default async function PautaPage() {
             vídeos — disponível nos planos Criador e Pro.
           </p>
           <Link
-            href="/app/conta#planos"
+            href="/app?settings=plano"
             className="inline-flex h-[48px] w-fit items-center rounded-sm bg-primary px-md text-button-label uppercase text-on-primary active:bg-primary-active"
           >
             Ver planos

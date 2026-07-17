@@ -28,14 +28,14 @@ export function DeleteAccountSection() {
       {!open ? (
         <button
           onClick={() => setOpen(true)}
-          className="w-fit cursor-pointer border border-warning/50 px-xs py-xxs text-caption-upper uppercase text-warning hover:border-warning"
+          className="w-fit cursor-pointer rounded-sm border border-warning/50 px-xs py-xxs text-caption-upper uppercase text-warning hover:border-warning"
         >
           Quero excluir minha conta
         </button>
       ) : (
         <form
           action={formAction}
-          className="flex max-w-[400px] flex-col gap-xs border border-warning/40 p-sm"
+          className="flex max-w-[400px] flex-col gap-xs rounded-md border border-warning/40 p-sm"
         >
           <FormMessage error={state.error} />
           <Input
