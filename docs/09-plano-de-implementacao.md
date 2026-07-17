@@ -180,6 +180,7 @@ verde, migrations aplicadas em dev+prod quando houver.
 | B3 | Mapping: chat central + saudação por hora + dropdowns Nichos/Canais | ✅ 17/07/2026 |
 | B4 | Dashboard: 4 tiles + gráfico semanal + faixas de score + formatos + histórico (migration faixas) | ✅ 17/07/2026 |
 | B5 | Workspace: pastas tipadas (Pautas/Referências) + canais salvos (migration) + drag-and-drop com fallback; UX didática a pedido do time (chips de tipo, estados vazios que ensinam, "Mover para" sempre visível) | ✅ 17/07/2026 |
+| B5.4 | Página dedicada da pasta (`/app/pauta/[id]`): notas da pasta + nota por item (migration `20260717000003`), ordenação, mover/soltar — spec em `docs/superpowers/specs/2026-07-17` (brainstorm com companion visual) | ✅ 17/07/2026 |
 | B6 | Light mode (Personalização) — revalidar dataviz na superfície clara | |
 
 ✅ Conclusão (por lote): mesmo critério da M10 + avaliação do fundador

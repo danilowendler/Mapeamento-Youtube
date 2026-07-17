@@ -11,10 +11,8 @@ import {
   FolderInput,
   Plus,
   Star,
-  Undo2,
 } from "lucide-react";
 import { ScoreBadge } from "@/features/results/ScoreBadge";
-import { CategoryHeader } from "@/features/pauta/CategoryHeader";
 import {
   createCategory,
   moveChannelRef,
@@ -58,7 +56,7 @@ const KIND_LABEL: Record<FolderKind, string> = {
  * do canvas + etiqueta colorida que declara o tipo (cinza = Pautas,
  * azul = Referências). Selecionada, a frente "abre" clareando.
  */
-function FolderGlyph({ kind, open }: { kind: FolderKind; open: boolean }) {
+export function FolderGlyph({ kind, open }: { kind: FolderKind; open: boolean }) {
   const accent =
     kind === "referencias"
       ? "var(--color-data-series)"
@@ -104,7 +102,6 @@ export function WorkspaceBoard({
   channels: ChannelItem[];
 }) {
   const router = useRouter();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [dragging, setDragging] = useState<DragItem | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [overrides, setOverrides] = useState<Map<string, string | null>>(
@@ -186,20 +183,6 @@ export function WorkspaceBoard({
       router.refresh();
     });
   }
-
-  const selected = folders.find((f) => f.id === selectedId) ?? null;
-  const selectedItems: (VideoItem | ChannelItem)[] = selected
-    ? selected.kind === "pautas"
-      ? videos.filter(
-          (v) =>
-            locate({ type: "video", id: v.videoId }, v.folderId) === selected.id,
-        )
-      : channels.filter(
-          (c) =>
-            locate({ type: "channel", id: c.channelId }, c.folderId) ===
-            selected.id,
-        )
-    : [];
 
   const hasAnything = videos.length > 0 || channels.length > 0;
 
@@ -386,10 +369,9 @@ export function WorkspaceBoard({
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-sm md:grid-cols-[1fr_300px]">
-        {/* Coluna principal: pastas + soltos, no ambiente de trabalho
-            com a grade técnica de fundo (print 05) */}
-        <div className="flex min-w-0 flex-col gap-sm rounded-md border border-hairline bg-technical-grid p-sm">
+      {/* Ambiente de trabalho: pastas + soltos sobre a grade técnica
+          (print 05). Clicar numa pasta abre a página dedicada dela. */}
+      <div className="flex min-w-0 flex-col gap-sm rounded-md border border-hairline bg-technical-grid p-sm">
           <section aria-label="Pastas" className="flex flex-col gap-xxs">
             <h2 className="text-caption-upper uppercase text-muted-soft">
               Pastas
@@ -406,21 +388,15 @@ export function WorkspaceBoard({
                   const rejected =
                     dragging !== null &&
                     KIND_FOR_TYPE[dragging.type] !== folder.kind;
-                  const isSelected = selectedId === folder.id;
                   return (
                     <li key={folder.id}>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSelectedId(isSelected ? null : folder.id)
-                        }
+                      <Link
+                        href={`/app/pauta/${folder.id}`}
                         {...folderDropProps(folder)}
                         className={`group flex w-full cursor-pointer flex-col items-center gap-xxs rounded-md border p-xs pt-sm text-center transition-[border-color,background-color,transform] duration-200 ${
                           isDrop
                             ? "border-data-series bg-data-series/10"
-                            : isSelected
-                              ? "border-muted bg-canvas-elevated/40"
-                              : "border-hairline bg-canvas hover:-translate-y-[2px] hover:border-muted"
+                            : "border-hairline bg-canvas hover:-translate-y-[2px] hover:border-muted"
                         } ${rejected ? "opacity-40" : ""}`}
                         title={
                           rejected
@@ -429,10 +405,10 @@ export function WorkspaceBoard({
                                   ? "esta pasta guarda vídeos"
                                   : "esta pasta guarda canais"
                               }`
-                            : undefined
+                            : "Abrir a pasta"
                         }
                       >
-                        <FolderGlyph kind={folder.kind} open={isSelected} />
+                        <FolderGlyph kind={folder.kind} open={isDrop} />
                         <span className="w-full truncate text-title-sm text-ink">
                           {folder.name}
                         </span>
@@ -445,7 +421,7 @@ export function WorkspaceBoard({
                         >
                           {KIND_LABEL[folder.kind]} · {countOf(folder)}
                         </span>
-                      </button>
+                      </Link>
                     </li>
                   );
                 })}
@@ -617,88 +593,6 @@ export function WorkspaceBoard({
               </ul>
             )}
           </section>
-        </div>
-
-        {/* Painel lateral: conteúdo da pasta selecionada */}
-        <aside
-          aria-label="Conteúdo da pasta selecionada"
-          className="h-fit rounded-md border border-hairline p-sm md:sticky md:top-md"
-        >
-          {selected === null ? (
-            <p className="text-body-sm text-body">
-              Clique numa pasta para ver o que tem dentro — e para
-              renomeá-la ou excluí-la.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-xs">
-              <CategoryHeader
-                key={selected.id}
-                id={selected.id}
-                name={selected.name}
-                count={selectedItems.length}
-                noun={
-                  selected.kind === "pautas"
-                    ? ["vídeo", "vídeos"]
-                    : ["canal", "canais"]
-                }
-              />
-              {selectedItems.length === 0 ? (
-                <p className="text-body-sm text-body">
-                  Pasta vazia — arraste um card de{" "}
-                  {selected.kind === "pautas" ? "vídeo" : "canal"} até ela,
-                  ou use o “Mover para” do card.
-                </p>
-              ) : (
-                <ul className="flex flex-col gap-xxs">
-                  {selectedItems.map((item) => {
-                    const isVideo = "videoId" in item;
-                    const drag: DragItem = isVideo
-                      ? { type: "video", id: item.videoId }
-                      : { type: "channel", id: item.channelId };
-                    return (
-                      <li
-                        key={drag.id}
-                        className="flex items-center justify-between gap-xxs border-b border-hairline pb-xxs"
-                      >
-                        <div className="min-w-0">
-                          <a
-                            href={
-                              isVideo
-                                ? `https://www.youtube.com/watch?v=${item.videoId}`
-                                : `https://www.youtube.com/channel/${item.channelId}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title="Abrir no YouTube"
-                            className="line-clamp-1 text-body-sm text-ink hover:underline"
-                          >
-                            {item.title}
-                          </a>
-                          <p className="truncate text-caption text-muted">
-                            {isVideo
-                              ? item.channelTitle
-                              : item.subscriberCount !== null
-                                ? `${formatCompactCount(item.subscriberCount)} inscritos`
-                                : "canal"}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => move(drag, null)}
-                          title="Devolver para os Soltos"
-                          className="flex shrink-0 cursor-pointer items-center gap-xxxs rounded-full border border-hairline px-xxs py-xxxs text-caption text-body transition-colors hover:border-muted hover:text-ink"
-                        >
-                          <Undo2 size={12} strokeWidth={1.6} />
-                          soltar
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          )}
-        </aside>
       </div>
     </div>
   );

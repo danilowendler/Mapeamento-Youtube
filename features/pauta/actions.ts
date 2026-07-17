@@ -181,6 +181,61 @@ export async function setChannelRef(
   return { saved };
 }
 
+const folderNotesSchema = z.string().max(2000, "Notas de até 2000 caracteres.");
+const itemNoteSchema = z.string().max(500, "Nota de até 500 caracteres.");
+
+/** Bloco de notas da pasta (página dedicada — spec B5.4). */
+export async function updateFolderNotes(
+  folderId: string,
+  rawText: string,
+): Promise<PautaActionResult> {
+  const gate = await requirePlanWithFavorites();
+  if ("error" in gate) return { error: gate.error };
+  if (!idSchema.safeParse(folderId).success) {
+    return { error: "Pasta inválida." };
+  }
+  const parsed = folderNotesSchema.safeParse(rawText);
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const { error } = await gate.supabase
+    .from("pauta_categories")
+    .update({ notes: parsed.data.trim() === "" ? null : parsed.data })
+    .eq("id", folderId);
+  if (error) return { error: "Erro ao salvar as notas. Tente novamente." };
+
+  revalidatePath(`/app/pauta/${folderId}`);
+  return {};
+}
+
+/** Nota individual de um vídeo (favorites.note) ou canal (channel_refs.note). */
+export async function updateItemNote(
+  type: "video" | "channel",
+  id: string,
+  rawText: string,
+): Promise<PautaActionResult> {
+  const gate = await requirePlanWithFavorites();
+  if ("error" in gate) return { error: gate.error };
+  if (!id.trim()) return { error: "Item inválido." };
+  const parsed = itemNoteSchema.safeParse(rawText);
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const note = parsed.data.trim() === "" ? null : parsed.data;
+  const { error } =
+    type === "video"
+      ? await gate.supabase
+          .from("favorites")
+          .update({ note })
+          .eq("video_id", id)
+      : await gate.supabase
+          .from("channel_refs")
+          .update({ note })
+          .eq("channel_id", id);
+  if (error) return { error: "Erro ao salvar a nota. Tente novamente." };
+
+  revalidatePath("/app/pauta");
+  return {};
+}
+
 export async function moveChannelRef(
   channelId: string,
   folderId: string | null,
