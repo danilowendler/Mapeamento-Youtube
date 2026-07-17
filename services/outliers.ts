@@ -15,6 +15,9 @@ export const MIN_BASELINE_AGE_DAYS = 14;
 export const MIN_BUCKET_SAMPLE = 10;
 /** Score mínimo para um vídeo contar como oportunidade (doc 3 §3.6). */
 export const MIN_OPPORTUNITY_SCORE = 3;
+/** Limiares das faixas de score do design system (3× · 10× · 30×+). */
+export const SCORE_BAND_MID = 10;
+export const SCORE_BAND_HIGH = 30;
 
 export type VideoFormat = "short" | "long";
 export type AgeBucket = "14d-3m" | "3m-12m" | "12m+";
