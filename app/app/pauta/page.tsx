@@ -1,26 +1,29 @@
 import Link from "next/link";
-import { CategoryHeader } from "@/features/pauta/CategoryHeader";
-import { MoveCategorySelect } from "@/features/pauta/MoveCategorySelect";
-import { NewCategoryForm } from "@/features/pauta/NewCategoryForm";
-import { VideoCard } from "@/features/results/VideoCard";
-import type { OpportunityCard } from "@/features/results/types";
+import {
+  WorkspaceBoard,
+  type ChannelItem,
+  type VideoItem,
+  type WorkspaceFolder,
+} from "@/features/pauta/WorkspaceBoard";
 import { createClient } from "@/lib/supabase/server";
 import { getPlanLimits } from "@/services/planService";
 
-export const metadata = { title: "Minha Pauta" };
+export const metadata = { title: "Workspace" };
 
-export default async function PautaPage() {
+export default async function WorkspacePage() {
   const supabase = await createClient();
   const limits = await getPlanLimits(supabase);
 
   if (!limits.favorites) {
     return (
       <div className="mx-auto flex max-w-[720px] flex-col gap-sm pt-xl">
-        <h1 className="font-display text-display-lg text-ink">Minha Pauta</h1>
+        <h1 className="font-display text-display-lg uppercase text-ink">
+          Workspace
+        </h1>
         <div className="flex flex-col gap-xs rounded-md border border-hairline p-sm">
           <p className="text-body-md text-body">
-            Salve as melhores oportunidades e monte a pauta dos seus próximos
-            vídeos — disponível nos planos Criador e Pro.
+            Salve as melhores oportunidades e organize a pauta dos seus
+            próximos vídeos em pastas — disponível nos planos Criador e Pro.
           </p>
           <Link
             href="/app?settings=plano"
@@ -33,154 +36,106 @@ export default async function PautaPage() {
     );
   }
 
-  const [{ data: categories }, { data: favorites }] = await Promise.all([
-    supabase
-      .from("pauta_categories")
-      .select("id, name, position")
-      .order("position")
-      .order("created_at"),
-    supabase
-      .from("favorites")
-      .select("video_id, search_id, category_id, created_at")
-      .order("created_at", { ascending: false })
-      .limit(200),
-  ]);
+  const [{ data: folderRows }, { data: favorites }, { data: refRows }] =
+    await Promise.all([
+      supabase
+        .from("pauta_categories")
+        .select("id, name, kind, position")
+        .order("position")
+        .order("created_at"),
+      supabase
+        .from("favorites")
+        .select("video_id, category_id, created_at")
+        .order("created_at", { ascending: false })
+        .limit(200),
+      supabase
+        .from("channel_refs")
+        .select(
+          "channel_id, folder_id, channels ( title, subscriber_count, thumbnail_url )",
+        )
+        .order("created_at", { ascending: false })
+        .limit(200),
+    ]);
 
-  let cards: (OpportunityCard & { categoryId: string | null })[] = [];
+  const folders: WorkspaceFolder[] = (folderRows ?? []).map((f) => ({
+    id: f.id,
+    name: f.name,
+    kind: f.kind === "referencias" ? "referencias" : "pautas",
+  }));
+
+  // Vídeos favoritados → cards de vídeo
+  let videos: VideoItem[] = [];
   if (favorites && favorites.length > 0) {
     const videoIds = favorites.map((f) => f.video_id);
-    const { data: videos } = await supabase
+    const { data: videoRows } = await supabase
       .from("videos")
-      .select(
-        "youtube_id, channel_id, title, thumbnail_url, is_short, duration_seconds, published_at, view_count, score, baseline_views",
-      )
+      .select("youtube_id, channel_id, title, thumbnail_url, score")
       .in("youtube_id", videoIds);
-    const channelIds = [...new Set((videos ?? []).map((v) => v.channel_id))];
-    const { data: channels } = await supabase
+    const channelIds = [
+      ...new Set((videoRows ?? []).map((v) => v.channel_id)),
+    ];
+    const { data: channelRows } = await supabase
       .from("channels")
-      .select("youtube_id, title, subscriber_count")
+      .select("youtube_id, title")
       .in("youtube_id", channelIds);
     const channelById = new Map(
-      (channels ?? []).map((c) => [c.youtube_id, c]),
+      (channelRows ?? []).map((c) => [c.youtube_id, c.title]),
     );
-    const videoById = new Map((videos ?? []).map((v) => [v.youtube_id, v]));
-
-    cards = favorites
-      .map((favorite) => {
-        const video = videoById.get(favorite.video_id);
-        if (!video) return null;
-        const channel = channelById.get(video.channel_id);
-        return {
+    const videoById = new Map(
+      (videoRows ?? []).map((v) => [v.youtube_id, v]),
+    );
+    videos = favorites.flatMap((favorite) => {
+      const video = videoById.get(favorite.video_id);
+      if (!video) return [];
+      return [
+        {
           videoId: video.youtube_id,
           title: video.title,
-          thumbnailUrl: video.thumbnail_url,
-          isShort: video.is_short,
-          durationSeconds: video.duration_seconds,
-          publishedAt: video.published_at,
-          viewCount: video.view_count,
+          channelTitle: channelById.get(video.channel_id) ?? "—",
           score: Number(video.score ?? 0),
-          baselineViews: video.baseline_views,
-          lowConfidence: false,
-          channelId: video.channel_id,
-          channelTitle: channel?.title ?? "—",
-          channelSubscribers: channel?.subscriber_count ?? null,
-          categoryId: favorite.category_id,
-        };
-      })
-      .filter(
-        (card): card is OpportunityCard & { categoryId: string | null } =>
-          card !== null,
-      );
+          thumbnailUrl: video.thumbnail_url,
+          folderId: favorite.category_id,
+        },
+      ];
+    });
   }
 
-  const options = (categories ?? []).map((c) => ({ id: c.id, name: c.name }));
-  const knownIds = new Set(options.map((o) => o.id));
-
-  // "Geral" primeiro (caixa de entrada dos sem categoria), depois as
-  // categorias do usuário na ordem de position
-  const sections: { id: string | null; name: string }[] = [
-    { id: null, name: "Geral" },
-    ...options,
-  ];
-  const cardsOf = (sectionId: string | null) =>
-    cards.filter((card) =>
-      sectionId === null
-        ? card.categoryId === null || !knownIds.has(card.categoryId)
-        : card.categoryId === sectionId,
-    );
+  // Canais salvos → cards de canal
+  type RefRow = {
+    channel_id: string;
+    folder_id: string | null;
+    channels: {
+      title: string;
+      subscriber_count: number | null;
+      thumbnail_url: string | null;
+    } | null;
+  };
+  const channels: ChannelItem[] = ((refRows ?? []) as unknown as RefRow[]).map(
+    (row) => ({
+      channelId: row.channel_id,
+      title: row.channels?.title ?? row.channel_id,
+      subscriberCount: row.channels?.subscriber_count ?? null,
+      thumbnailUrl: row.channels?.thumbnail_url ?? null,
+      folderId: row.folder_id,
+    }),
+  );
 
   return (
-    <div className="mx-auto flex max-w-[860px] flex-col gap-md pt-xl">
+    <div className="mx-auto flex max-w-[1080px] flex-col gap-md pt-xl">
       <header className="flex flex-col gap-xxs">
-        <h1 className="font-display text-display-lg text-ink">Minha Pauta</h1>
+        <h1 className="font-display text-display-lg uppercase text-ink">
+          Workspace
+        </h1>
         <p className="text-body-md text-body">
-          As oportunidades que você salvou — a matéria-prima dos próximos
-          vídeos.
+          Sua área de trabalho — arraste as oportunidades soltas para dentro
+          das pastas.{" "}
+          <span className="text-muted-soft">
+            Pautas guardam vídeos; Referências guardam canais.
+          </span>
         </p>
       </header>
 
-      <NewCategoryForm />
-
-      {cards.length === 0 && options.length === 0 ? (
-        <p className="rounded-md border border-dashed border-hairline p-sm text-body-md text-body">
-          Nada salvo ainda — clique na ☆ de qualquer oportunidade para
-          adicioná-la aqui.
-        </p>
-      ) : (
-        sections.map((section) => {
-          const sectionCards = cardsOf(section.id);
-          // Geral vazio some quando o usuário já organizou tudo
-          if (section.id === null && sectionCards.length === 0) return null;
-          return (
-            <section
-              key={section.id ?? "geral"}
-              className="flex flex-col gap-xs"
-            >
-              {section.id === null ? (
-                <h2 className="border-b border-hairline pb-xxs text-title-md text-ink">
-                  Geral{" "}
-                  <span className="text-body-sm font-normal text-muted-soft">
-                    · {sectionCards.length}{" "}
-                    {sectionCards.length === 1 ? "ideia" : "ideias"}
-                  </span>
-                </h2>
-              ) : (
-                <CategoryHeader
-                  id={section.id}
-                  name={section.name}
-                  count={sectionCards.length}
-                />
-              )}
-
-              {sectionCards.length === 0 ? (
-                <p className="text-body-sm text-muted-soft">
-                  Vazia — use o seletor “Categoria” de qualquer favorito para
-                  mover ideias para cá.
-                </p>
-              ) : (
-                <ul className="flex flex-col gap-xs">
-                  {sectionCards.map((card) => (
-                    <li key={card.videoId} className="flex flex-col gap-xxs">
-                      <VideoCard card={card} favorited />
-                      <div className="flex justify-end">
-                        <MoveCategorySelect
-                          videoId={card.videoId}
-                          current={
-                            card.categoryId && knownIds.has(card.categoryId)
-                              ? card.categoryId
-                              : null
-                          }
-                          options={options}
-                        />
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          );
-        })
-      )}
+      <WorkspaceBoard folders={folders} videos={videos} channels={channels} />
     </div>
   );
 }
