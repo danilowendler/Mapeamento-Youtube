@@ -2,8 +2,19 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   analyzeChannel,
   MIN_OPPORTUNITY_SCORE,
+  SCORE_BAND_HIGH,
+  SCORE_BAND_MID,
   type AnalyzableVideo,
 } from "./outliers";
+
+/** Contagens de oportunidades por faixa de score e formato. */
+export type OpportunityBands = {
+  low: number;
+  mid: number;
+  high: number;
+  short: number;
+  long: number;
+};
 
 /**
  * Lê os vídeos de um canal do corpus, roda o motor de outliers e
@@ -20,8 +31,16 @@ export async function applyChannelAnalysis(
   topScore: number | null;
   videosScored: number;
   opportunities: number;
+  bands: OpportunityBands;
 }> {
   const supabase = createAdminClient();
+  const emptyBands: OpportunityBands = {
+    low: 0,
+    mid: 0,
+    high: 0,
+    short: 0,
+    long: 0,
+  };
 
   const { data: rows, error } = await supabase
     .from("videos")
@@ -29,7 +48,12 @@ export async function applyChannelAnalysis(
     .eq("channel_id", channelId);
   if (error) throw new Error(`analysis.readVideos: ${error.message}`);
   if (!rows || rows.length === 0) {
-    return { topScore: null, videosScored: 0, opportunities: 0 };
+    return {
+      topScore: null,
+      videosScored: 0,
+      opportunities: 0,
+      bands: emptyBands,
+    };
   }
 
   const analyzable: AnalyzableVideo[] = rows.map((row) => ({
@@ -81,11 +105,22 @@ export async function applyChannelAnalysis(
     null,
   );
 
+  // Faixas por score/formato — o Dashboard consome estas contagens
+  const isShortById = new Map(analyzable.map((v) => [v.youtubeId, v.isShort]));
+  const bands = { ...emptyBands };
+  for (const video of videos) {
+    if (video.score === null || video.score < MIN_OPPORTUNITY_SCORE) continue;
+    if (video.score >= SCORE_BAND_HIGH) bands.high += 1;
+    else if (video.score >= SCORE_BAND_MID) bands.mid += 1;
+    else bands.low += 1;
+    if (isShortById.get(video.youtubeId)) bands.short += 1;
+    else bands.long += 1;
+  }
+
   return {
     topScore,
     videosScored: videos.filter((v) => v.score !== null).length,
-    opportunities: videos.filter(
-      (v) => v.score !== null && v.score >= MIN_OPPORTUNITY_SCORE,
-    ).length,
+    opportunities: bands.low + bands.mid + bands.high,
+    bands,
   };
 }

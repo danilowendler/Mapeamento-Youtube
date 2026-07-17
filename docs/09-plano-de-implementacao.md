@@ -178,7 +178,7 @@ verde, migrations aplicadas em dev+prod quando houver.
 | B1 | Marca BEVIEWER + sidebar recolhível (3 itens: Mapping/Dashboard/Workspace) + popover do usuário; serif = Fraunces | ✅ 17/07/2026 |
 | B2 | Modal de Settings (Geral/Perfil/Plano/Conta) + `/app/conta` vira redirect | ✅ 17/07/2026 |
 | B3 | Mapping: chat central + saudação por hora + dropdowns Nichos/Canais | ✅ 17/07/2026 |
-| B4 | Dashboard: 4 tiles + gráfico semanal + faixas de score + formatos + histórico (migration faixas) | |
+| B4 | Dashboard: 4 tiles + gráfico semanal + faixas de score + formatos + histórico (migration faixas) | ✅ 17/07/2026 |
 | B5 | Workspace: pastas tipadas (Pautas/Referências) + canais salvos (migration) + drag-and-drop com fallback | |
 | B6 | Light mode (Personalização) — revalidar dataviz na superfície clara | |
 
