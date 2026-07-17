@@ -1,11 +1,26 @@
 import { SearchForm } from "@/features/search/SearchForm";
 import { UsageMeter } from "@/features/search/UsageMeter";
+import { BRAND } from "@/lib/brand";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUsage } from "@/services/planService";
 
-export const metadata = { title: "Nova Pesquisa" };
+export const metadata = { title: "Mapping" };
 
-export default async function NovaPesquisaPage() {
+/** Saudação por hora do dia no fuso do público (Brasil-first). */
+function greetingForNow(): string {
+  const hour = Number(
+    new Intl.DateTimeFormat("pt-BR", {
+      hour: "numeric",
+      hour12: false,
+      timeZone: "America/Sao_Paulo",
+    }).format(new Date()),
+  );
+  if (hour >= 5 && hour < 12) return "Bom dia";
+  if (hour >= 12 && hour < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
+export default async function MappingPage() {
   const supabase = await createClient();
   const [{ data: niches }, { data: profile }, usage] = await Promise.all([
     supabase.from("niches").select("slug, name, description").order("name"),
@@ -13,27 +28,24 @@ export default async function NovaPesquisaPage() {
     getCurrentUsage(supabase),
   ]);
 
-  // Saudação da entrada estilo chat (M10, lote 2) — primeiro nome real
   const firstName = profile?.display_name?.trim().split(/\s+/)[0];
-
   const exhausted = usage.used >= usage.limit;
 
   return (
-    <div className="mx-auto flex max-w-[760px] flex-col gap-md pt-lg md:pt-xl lg:max-w-[1080px]">
-      <header className="flex flex-col gap-xxs">
+    <div className="mx-auto flex min-h-[calc(100dvh-220px)] w-full max-w-[760px] flex-col justify-center gap-md py-lg">
+      <header className="flex flex-col items-center gap-xxs text-center">
         <span className="text-caption-upper uppercase tracking-widest text-primary">
-          Central de pesquisa
+          {BRAND.name}:)
         </span>
         <h1 className="font-display text-display-lg text-ink">
-          O que você quer mapear hoje{firstName ? `, ${firstName}` : ""}?
+          {greetingForNow()}
+          {firstName ? `, ${firstName}` : ""}
         </h1>
         <p className="text-body-md text-body">
-          Escolha um nicho, digite um tema ou informe canais — e descubra
-          quais vídeos performaram muito acima do normal.
+          Digite um tema, escolha um nicho ou cole canais — e descubra quais
+          vídeos performaram muito acima do normal.
         </p>
       </header>
-
-      <UsageMeter usage={usage} />
 
       {exhausted ? (
         <div className="flex flex-col gap-xxs rounded-md border border-hairline p-sm">
@@ -58,6 +70,8 @@ export default async function NovaPesquisaPage() {
       ) : (
         <SearchForm niches={niches ?? []} />
       )}
+
+      <UsageMeter usage={usage} />
     </div>
   );
 }

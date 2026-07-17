@@ -2,20 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { ChevronDown, LayoutGrid, Link2 } from "lucide-react";
 import { Button } from "@/components/Button";
 import { FormMessage } from "@/components/FormMessage";
 import { ChatSearchInput } from "@/features/search/ChatSearchInput";
 import { parseChannelInput } from "@/utils/youtube";
 
 const MAX_CHANNELS = 20;
-
-const CHAT_EXAMPLES = [
-  "renda extra",
-  "receitas fit",
-  "inglês para viagem",
-  "@manualdomundo",
-  "culinária",
-];
 
 export type NicheOption = {
   slug: string;
@@ -28,14 +21,18 @@ type Payload =
   | { mode: "keyword"; keyword: string }
   | { mode: "niche"; nicheSlug: string };
 
+type Panel = "niches" | "channels" | null;
+
 /**
- * Nova Pesquisa (doc 6 §6.3): três portas de entrada, visíveis ao mesmo
- * tempo — painéis lado a lado no desktop, empilhados no mobile (M10,
- * lote 1; decisão reversível para abas se a densidade piorar).
+ * Mapping (M10.5, lote B3 — prints 01–03): chat central como porta
+ * única + dois caminhos assistidos em dropdowns exclusivos (Nichos
+ * prontos / Colar link de um canal). Submit e parse determinístico
+ * preservados do formato anterior.
  */
 export function SearchForm({ niches }: { niches: NicheOption[] }) {
   const router = useRouter();
   const [raw, setRaw] = useState("");
+  const [openPanel, setOpenPanel] = useState<Panel>(null);
   const [error, setError] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState<string | false>(false);
 
@@ -61,8 +58,8 @@ export function SearchForm({ niches }: { niches: NicheOption[] }) {
   const hasInvalid = analysis.some((a) => !a.valid);
 
   /**
-   * Roteamento determinístico da entrada de chat (M10, lote 2):
-   * @handle/URL/ID → canais; nome exato de nicho → nicho; senão keyword.
+   * Roteamento determinístico da entrada de chat: @handle/URL/ID →
+   * canais; nome exato de nicho → nicho; senão keyword.
    */
   function sendChat(text: string) {
     const parsed = parseChannelInput(text);
@@ -103,27 +100,72 @@ export function SearchForm({ niches }: { niches: NicheOption[] }) {
     }
   }
 
+  function toggle(panel: Exclude<Panel, null>) {
+    setOpenPanel((current) => (current === panel ? null : panel));
+  }
+
+  const toggleClass = (active: boolean) =>
+    `flex cursor-pointer items-center gap-xxs rounded-full border border-hairline px-xs py-xxs text-caption-upper uppercase transition-colors ${
+      active ? "text-ink" : "text-muted-soft hover:text-ink"
+    }`;
+
   return (
     <div className="flex flex-col gap-sm">
       <FormMessage error={error} />
 
-      <div className="grid grid-cols-1 divide-y divide-hairline overflow-hidden rounded-md border border-hairline lg:grid-cols-3 lg:divide-x lg:divide-y-0">
-        <section
-          aria-labelledby="panel-niche"
-          className="flex flex-col gap-xs p-sm"
+      <ChatSearchInput
+        placeholder="Digite um tema, palavra-chave ou pergunta…"
+        pending={submitting === "chat"}
+        onSend={sendChat}
+      />
+
+      <div className="flex flex-wrap justify-center gap-xxs">
+        <button
+          type="button"
+          onClick={() => toggle("niches")}
+          aria-expanded={openPanel === "niches"}
+          aria-controls="panel-niches"
+          className={toggleClass(openPanel === "niches")}
         >
-          <header className="flex flex-col gap-xxxs">
-            <h2
-              id="panel-niche"
-              className="text-caption-upper uppercase text-muted-soft"
-            >
-              Nichos
-            </h2>
-            <p className="text-body-sm text-body">
-              Receba as oportunidades dos canais que dominam o tema.
-            </p>
-          </header>
-          <ul className="flex flex-col gap-xxs">
+          <LayoutGrid size={16} strokeWidth={1.6} />
+          Nichos prontos
+          <ChevronDown
+            size={16}
+            strokeWidth={1.6}
+            className={`transition-transform duration-200 ${
+              openPanel === "niches" ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+        <button
+          type="button"
+          onClick={() => toggle("channels")}
+          aria-expanded={openPanel === "channels"}
+          aria-controls="panel-channels"
+          className={toggleClass(openPanel === "channels")}
+        >
+          <Link2 size={16} strokeWidth={1.6} />
+          Colar link de um canal
+          <ChevronDown
+            size={16}
+            strokeWidth={1.6}
+            className={`transition-transform duration-200 ${
+              openPanel === "channels" ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+      </div>
+
+      {openPanel === "niches" && (
+        <section
+          id="panel-niches"
+          aria-label="Nichos prontos"
+          className="animate-bubble-in flex flex-col gap-xs rounded-md border border-hairline p-sm"
+        >
+          <p className="text-body-sm text-body">
+            Receba as oportunidades dos canais que dominam o tema.
+          </p>
+          <ul className="grid grid-cols-1 gap-xxs sm:grid-cols-2 md:grid-cols-3">
             {niches.map((niche) => (
               <li key={niche.slug}>
                 <button
@@ -152,70 +194,35 @@ export function SearchForm({ niches }: { niches: NicheOption[] }) {
             ))}
           </ul>
         </section>
+      )}
 
+      {openPanel === "channels" && (
         <section
-          aria-labelledby="panel-keyword"
-          className="flex flex-col gap-xs p-sm"
+          id="panel-channels"
+          aria-label="Colar link de um canal"
+          className="animate-bubble-in flex flex-col gap-xs rounded-md border border-hairline p-sm"
         >
-          <header className="flex flex-col gap-xxxs">
-            <h2
-              id="panel-keyword"
-              className="text-caption-upper uppercase text-muted-soft"
-            >
-              Palavra-chave
-            </h2>
-            <p className="text-body-sm text-body">
-              Escreva como numa conversa — um tema, um @canal ou o nome de
-              um nicho.
-            </p>
-          </header>
-          <ChatSearchInput
-            examples={CHAT_EXAMPLES}
-            pending={submitting === "chat"}
-            onSend={sendChat}
+          <label htmlFor="channels" className="text-body-sm text-body">
+            Cole os canais — um por linha (URL, @handle ou ID).
+          </label>
+          <textarea
+            id="channels"
+            value={raw}
+            onChange={(event) => setRaw(event.target.value)}
+            rows={5}
+            placeholder={"@manualdomundo\nhttps://youtube.com/@coisadenerd"}
+            className="rounded-sm border border-hairline bg-canvas px-xs py-xs font-mono text-body-md text-ink placeholder:text-muted"
           />
-        </section>
-
-        <section
-          aria-labelledby="panel-channels"
-          className="flex flex-col gap-xs p-sm"
-        >
-          <header className="flex flex-col gap-xxxs">
-            <h2
-              id="panel-channels"
-              className="text-caption-upper uppercase text-muted-soft"
-            >
-              Canais
-            </h2>
+          <div className="flex flex-wrap items-center justify-between gap-xs">
             <p className="text-body-sm text-body">
-              Um por linha — URL, @handle ou ID.
+              {analysis.filter((a) => a.valid).length} de {MAX_CHANNELS} canais
+              {hasInvalid && (
+                <span className="text-warning">
+                  {" "}
+                  · use URL ou @handle (nomes livres: use o chat)
+                </span>
+              )}
             </p>
-          </header>
-          <div className="flex flex-col gap-xs">
-            <div className="flex flex-col gap-xxs">
-              <label htmlFor="channels" className="sr-only">
-                Canais — um por linha (URL, @handle ou ID)
-              </label>
-              <textarea
-                id="channels"
-                value={raw}
-                onChange={(event) => setRaw(event.target.value)}
-                rows={6}
-                placeholder={"@manualdomundo\nhttps://youtube.com/@coisadenerd"}
-                className="rounded-sm border border-hairline bg-canvas px-xs py-xs font-mono text-body-md text-ink placeholder:text-muted"
-              />
-              <p className="text-body-sm text-body">
-                {analysis.filter((a) => a.valid).length} de {MAX_CHANNELS}{" "}
-                canais
-                {hasInvalid && (
-                  <span className="text-warning">
-                    {" "}
-                    · use URL ou @handle (nomes livres: use o painel
-                    Palavra-chave)
-                  </span>
-                )}
-              </p>
-            </div>
             <Button
               onClick={() =>
                 submit({ mode: "channels", inputs: lines }, "channels")
@@ -231,7 +238,7 @@ export function SearchForm({ niches }: { niches: NicheOption[] }) {
             </Button>
           </div>
         </section>
-      </div>
+      )}
     </div>
   );
 }
