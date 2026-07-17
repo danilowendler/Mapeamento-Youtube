@@ -59,6 +59,7 @@ export function ChannelChips({ chips }: { chips: ChannelChip[] }) {
           <SaveChannelButton
             channelId={chip.channelId}
             initialSaved={chip.saved}
+            labeled
           />
         </li>
       ))}

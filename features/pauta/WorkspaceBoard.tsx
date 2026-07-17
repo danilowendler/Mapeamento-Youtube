@@ -8,7 +8,6 @@ import {
   Bookmark,
   Folder,
   FolderOpen,
-  GripVertical,
   Plus,
   Star,
   Undo2,
@@ -291,14 +290,15 @@ export function WorkspaceBoard({
       </div>
 
       <div className="grid grid-cols-1 gap-sm md:grid-cols-[1fr_300px]">
-        {/* Coluna principal: pastas + soltos */}
-        <div className="flex min-w-0 flex-col gap-sm">
+        {/* Coluna principal: pastas + soltos, no ambiente de trabalho
+            com a grade técnica de fundo (print 05) */}
+        <div className="flex min-w-0 flex-col gap-sm rounded-md border border-hairline bg-technical-grid p-sm">
           <section aria-label="Pastas" className="flex flex-col gap-xxs">
             <h2 className="text-caption-upper uppercase text-muted-soft">
               Pastas
             </h2>
             {folders.length === 0 ? (
-              <p className="rounded-md border border-dashed border-hairline p-sm text-body-sm text-body">
+              <p className="rounded-md border border-dashed border-hairline bg-canvas p-sm text-body-sm text-body">
                 Você ainda não tem pastas — crie a primeira acima para
                 organizar suas ideias.
               </p>
@@ -322,8 +322,8 @@ export function WorkspaceBoard({
                           isDrop
                             ? "border-data-series bg-data-series/10"
                             : isSelected
-                              ? "border-muted bg-canvas-elevated/25"
-                              : "border-hairline hover:border-muted"
+                              ? "border-muted bg-canvas-elevated/40"
+                              : "border-hairline bg-canvas hover:border-muted"
                         } ${rejected ? "opacity-40" : ""}`}
                         title={
                           rejected
@@ -381,7 +381,7 @@ export function WorkspaceBoard({
             </p>
 
             {!hasAnything ? (
-              <div className="flex flex-col gap-xs rounded-md border border-dashed border-hairline p-sm">
+              <div className="flex flex-col gap-xs rounded-md border border-dashed border-hairline bg-canvas p-sm">
                 <p className="flex items-start gap-xxs text-body-sm text-body">
                   <Star
                     size={16}
@@ -397,8 +397,9 @@ export function WorkspaceBoard({
                     strokeWidth={1.6}
                     className="mt-[2px] shrink-0 text-data-series"
                   />
-                  Salve canais nos resultados de uma pesquisa — eles viram
-                  cards de canal, seus concorrentes de referência.
+                  Nos resultados, clique em “salvar” ao lado de qualquer
+                  canal (na fileira de canais analisados ou nos
+                  relacionados) — ele vira um card de canal aqui.
                 </p>
                 <Link
                   href="/app"
@@ -408,57 +409,55 @@ export function WorkspaceBoard({
                 </Link>
               </div>
             ) : looseVideos.length === 0 && looseChannels.length === 0 ? (
-              <p className="rounded-md border border-dashed border-hairline p-sm text-body-sm text-body">
+              <p className="rounded-md border border-dashed border-hairline bg-canvas p-sm text-body-sm text-body">
                 Tudo organizado — novos favoritos e canais salvos chegam
                 aqui.
               </p>
             ) : (
-              <ul className="grid grid-cols-1 gap-xxs sm:grid-cols-2">
+              <ul className="grid grid-cols-2 gap-xxs md:grid-cols-3 lg:grid-cols-4">
                 {looseVideos.map((video) => (
                   <li
                     key={video.videoId}
                     {...dragProps({ type: "video", id: video.videoId })}
-                    className={`flex cursor-grab flex-col gap-xxs rounded-md border border-hairline p-xxs active:cursor-grabbing ${
+                    title="Arraste para uma pasta de Pautas"
+                    className={`flex cursor-grab flex-col overflow-hidden rounded-md border border-hairline bg-canvas transition-colors hover:border-muted active:cursor-grabbing ${
                       dragging?.id === video.videoId ? "opacity-50" : ""
                     }`}
                   >
-                    <div className="flex items-center gap-xxs">
-                      <GripVertical
-                        size={14}
-                        strokeWidth={1.6}
-                        aria-hidden="true"
-                        className="shrink-0 text-muted"
-                      />
-                      <div className="relative h-[40px] w-[71px] shrink-0 overflow-hidden rounded-xs bg-canvas-elevated">
-                        {video.thumbnailUrl && (
-                          <Image
-                            src={video.thumbnailUrl}
-                            alt=""
-                            fill
-                            sizes="71px"
-                            className="object-cover"
-                          />
+                    <div className="relative aspect-video w-full bg-canvas-elevated">
+                      {video.thumbnailUrl && (
+                        <Image
+                          src={video.thumbnailUrl}
+                          alt=""
+                          fill
+                          sizes="(max-width: 768px) 50vw, 220px"
+                          className="object-cover"
+                        />
+                      )}
+                      <span className="absolute right-xxs top-xxs">
+                        <ScoreBadge score={video.score} />
+                      </span>
+                    </div>
+                    <div className="flex flex-1 flex-col gap-xxxs p-xxs">
+                      <p className="line-clamp-2 text-body-sm text-ink">
+                        {video.title}
+                      </p>
+                      <p className="truncate text-caption text-muted">
+                        {video.channelTitle}
+                      </p>
+                      <div className="mt-auto flex flex-wrap items-center justify-between gap-xxs pt-xxxs">
+                        <span className="rounded-full border border-hairline px-xxs text-caption-upper uppercase text-muted-soft">
+                          vídeo
+                        </span>
+                        {moveSelect(
+                          { type: "video", id: video.videoId },
+                          locate(
+                            { type: "video", id: video.videoId },
+                            video.folderId,
+                          ),
+                          "pautas",
                         )}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="line-clamp-1 text-body-sm text-ink">
-                          {video.title}
-                        </p>
-                        <p className="truncate text-caption text-muted">
-                          {video.channelTitle}
-                        </p>
-                      </div>
-                      <ScoreBadge score={video.score} />
-                    </div>
-                    <div className="flex items-center justify-between gap-xxs">
-                      <span className="rounded-full border border-hairline px-xxs text-caption-upper uppercase text-muted-soft">
-                        vídeo
-                      </span>
-                      {moveSelect(
-                        { type: "video", id: video.videoId },
-                        locate({ type: "video", id: video.videoId }, video.folderId),
-                        "pautas",
-                      )}
                     </div>
                   </li>
                 ))}
@@ -466,17 +465,12 @@ export function WorkspaceBoard({
                   <li
                     key={channel.channelId}
                     {...dragProps({ type: "channel", id: channel.channelId })}
-                    className={`flex cursor-grab flex-col gap-xxs rounded-md border border-hairline p-xxs active:cursor-grabbing ${
+                    title="Arraste para uma pasta de Referências"
+                    className={`flex cursor-grab flex-col justify-between gap-xxs rounded-md border border-hairline bg-canvas p-xxs transition-colors hover:border-muted active:cursor-grabbing ${
                       dragging?.id === channel.channelId ? "opacity-50" : ""
                     }`}
                   >
                     <div className="flex items-center gap-xxs">
-                      <GripVertical
-                        size={14}
-                        strokeWidth={1.6}
-                        aria-hidden="true"
-                        className="shrink-0 text-muted"
-                      />
                       <div className="relative h-[36px] w-[36px] shrink-0 overflow-hidden rounded-full bg-canvas-elevated">
                         {channel.thumbnailUrl ? (
                           <Image
