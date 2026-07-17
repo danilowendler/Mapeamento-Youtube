@@ -29,10 +29,15 @@ export function SaveChannelButton({
     const next = !saved;
     setSaved(next);
     setMessage(null);
-    const result = await setChannelRef(channelId, next);
-    if (result.error) {
+    try {
+      const result = await setChannelRef(channelId, next);
+      if (result.error) {
+        setSaved(!next);
+        setMessage(result.error);
+      }
+    } catch {
       setSaved(!next);
-      setMessage(result.error);
+      setMessage("Falha de rede. Tente novamente.");
     }
   }
 

@@ -246,6 +246,7 @@ export default async function ResultadosPage({
         <ResultsView
           cards={cards}
           favoritedIds={favoritedIds}
+          savedChannelIds={[...savedChannelIds]}
           searchId={search.id}
         />
       )}

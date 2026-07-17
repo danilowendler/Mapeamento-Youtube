@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { FavoriteButton } from "@/features/favorites/FavoriteButton";
+import { SaveMenu } from "@/features/pauta/SaveMenu";
 import {
   formatCompactCount,
   formatDuration,
@@ -12,10 +12,12 @@ import type { OpportunityCard } from "./types";
 export function VideoCard({
   card,
   favorited = false,
+  channelSaved = false,
   searchId,
 }: {
   card: OpportunityCard;
   favorited?: boolean;
+  channelSaved?: boolean;
   searchId?: string;
 }) {
   return (
@@ -43,11 +45,13 @@ export function VideoCard({
       <div className="flex min-w-0 flex-1 flex-col gap-xxxs">
         <div className="flex items-start justify-between gap-xs">
           <h3 className="line-clamp-2 text-title-sm text-ink">{card.title}</h3>
-          <span className="flex shrink-0 items-center gap-xxxs">
-            <FavoriteButton
+          <span className="flex shrink-0 items-center gap-xxs">
+            <SaveMenu
               videoId={card.videoId}
+              channelId={card.channelId}
               searchId={searchId}
-              initialFavorited={favorited}
+              initialVideoSaved={favorited}
+              initialChannelSaved={channelSaved}
             />
             <ScoreBadge score={card.score} />
           </span>

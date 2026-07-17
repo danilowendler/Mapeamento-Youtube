@@ -24,13 +24,19 @@ const SUBS_RANGES: Record<string, (subs: number | null) => boolean> = {
 export function ResultsView({
   cards,
   favoritedIds = [],
+  savedChannelIds = [],
   searchId,
 }: {
   cards: OpportunityCard[];
   favoritedIds?: string[];
+  savedChannelIds?: string[];
   searchId?: string;
 }) {
   const favoritedSet = useMemo(() => new Set(favoritedIds), [favoritedIds]);
+  const savedChannelSet = useMemo(
+    () => new Set(savedChannelIds),
+    [savedChannelIds],
+  );
   const router = useRouter();
   const params = useSearchParams();
 
@@ -192,6 +198,7 @@ export function ResultsView({
               <VideoCard
                 card={card}
                 favorited={favoritedSet.has(card.videoId)}
+                channelSaved={savedChannelSet.has(card.channelId)}
                 searchId={searchId}
               />
             </li>

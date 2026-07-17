@@ -6,7 +6,10 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
   Bookmark,
+  Check,
+  ChevronDown,
   Folder,
+  FolderInput,
   FolderOpen,
   Plus,
   Star,
@@ -80,6 +83,7 @@ export function WorkspaceBoard({
     new Map(),
   );
   const [error, setError] = useState<string | undefined>();
+  const [openMenuKey, setOpenMenuKey] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   // Formulário de criação
@@ -209,41 +213,106 @@ export function WorkspaceBoard({
     };
   }
 
-  const moveSelect = (
+  /**
+   * Menu compacto "Mover" (substitui o select nativo, que estourava o
+   * card). Um aberto por vez; fecha em clique fora.
+   */
+  const moveMenu = (
     item: DragItem,
     current: string | null,
     kind: FolderKind,
   ) => {
+    const key = keyOf(item);
+    const open = openMenuKey === key;
     const options = folders.filter((f) => f.kind === kind);
+    const destinations: { id: string | null; label: string }[] = [
+      { id: null, label: "Soltos" },
+      ...options.map((f) => ({ id: f.id as string | null, label: f.name })),
+    ];
     return (
-      <label className="flex items-center gap-xxxs text-caption text-muted-soft">
-        Mover para
-        <select
-          value={current ?? ""}
-          onChange={(event) =>
-            move(item, event.target.value === "" ? null : event.target.value)
-          }
-          className="h-[28px] cursor-pointer rounded-sm border border-hairline bg-canvas px-xxxs text-caption text-body"
+      <span
+        className="relative inline-flex"
+        onPointerDown={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={() => setOpenMenuKey(open ? null : key)}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          title="Mover para uma pasta"
+          className={`flex cursor-pointer items-center gap-xxxs rounded-full border px-xxs py-xxxs text-caption transition-colors ${
+            open
+              ? "border-muted text-ink"
+              : "border-hairline text-body hover:border-muted hover:text-ink"
+          }`}
         >
-          <option value="">Soltos</option>
-          {options.length === 0 && (
-            <option value="" disabled>
-              crie uma pasta de {KIND_LABEL[kind]}
-            </option>
-          )}
-          {options.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.name}
-            </option>
-          ))}
-        </select>
-      </label>
+          <FolderInput size={12} strokeWidth={1.6} />
+          Mover
+          <ChevronDown
+            size={12}
+            strokeWidth={1.6}
+            className={`transition-transform duration-200 ${
+              open ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+        {open && (
+          <span
+            role="menu"
+            aria-label="Mover para"
+            className="animate-bubble-in absolute right-0 top-full z-30 mt-xxxs flex w-[180px] flex-col gap-xxxs rounded-md border border-hairline bg-canvas-elevated p-xxs"
+          >
+            {destinations.map((destination) => {
+              const active = current === destination.id;
+              return (
+                <button
+                  key={destination.id ?? "soltos"}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setOpenMenuKey(null);
+                    if (!active) move(item, destination.id);
+                  }}
+                  className={`flex w-full cursor-pointer items-center gap-xxs rounded-sm px-xs py-xxs text-left text-body-sm transition-colors ${
+                    active
+                      ? "text-ink"
+                      : "text-body hover:bg-canvas/60 hover:text-ink"
+                  }`}
+                >
+                  <span className="truncate">{destination.label}</span>
+                  {active && (
+                    <Check
+                      size={14}
+                      strokeWidth={2}
+                      className="ml-auto shrink-0 text-success"
+                    />
+                  )}
+                </button>
+              );
+            })}
+            {options.length === 0 && (
+              <span className="px-xs py-xxs text-caption text-muted">
+                crie uma pasta de {KIND_LABEL[kind]} acima
+              </span>
+            )}
+          </span>
+        )}
+      </span>
     );
   };
 
   return (
     <div className="flex flex-col gap-sm">
       {error && <p className="text-body-sm text-warning">{error}</p>}
+      {/* Fecha o menu "Mover" aberto em qualquer clique fora dele
+          (os gatilhos/menus barram a propagação do pointerdown) */}
+      {openMenuKey !== null && (
+        <span
+          aria-hidden="true"
+          className="fixed inset-0 z-20"
+          onPointerDown={() => setOpenMenuKey(null)}
+        />
+      )}
 
       {/* Criação de pastas — os dois tipos lado a lado, com explicação */}
       <div className="flex flex-col gap-xxs rounded-md border border-hairline p-sm">
@@ -420,11 +489,11 @@ export function WorkspaceBoard({
                     key={video.videoId}
                     {...dragProps({ type: "video", id: video.videoId })}
                     title="Arraste para uma pasta de Pautas"
-                    className={`flex cursor-grab flex-col overflow-hidden rounded-md border border-hairline bg-canvas transition-colors hover:border-muted active:cursor-grabbing ${
+                    className={`flex cursor-grab flex-col rounded-md border border-hairline bg-canvas transition-colors hover:border-muted active:cursor-grabbing ${
                       dragging?.id === video.videoId ? "opacity-50" : ""
                     }`}
                   >
-                    <div className="relative aspect-video w-full bg-canvas-elevated">
+                    <div className="relative aspect-video w-full overflow-hidden rounded-t-md bg-canvas-elevated">
                       {video.thumbnailUrl && (
                         <Image
                           src={video.thumbnailUrl}
@@ -449,7 +518,7 @@ export function WorkspaceBoard({
                         <span className="rounded-full border border-hairline px-xxs text-caption-upper uppercase text-muted-soft">
                           vídeo
                         </span>
-                        {moveSelect(
+                        {moveMenu(
                           { type: "video", id: video.videoId },
                           locate(
                             { type: "video", id: video.videoId },
@@ -501,7 +570,7 @@ export function WorkspaceBoard({
                       <span className="rounded-full border border-hairline px-xxs text-caption-upper uppercase text-data-series">
                         canal
                       </span>
-                      {moveSelect(
+                      {moveMenu(
                         { type: "channel", id: channel.channelId },
                         locate(
                           { type: "channel", id: channel.channelId },
