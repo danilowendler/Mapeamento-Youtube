@@ -121,10 +121,9 @@
 
 /* Serif display (v2): só na escala display-* de títulos/saudações —
    UI, corpo e números seguem na Inter. Peso 400 (serifs não recebem
-   o 500 da Inter). Família provisória: Instrument Serif, até o teste
-   em /app/fontes ser batido pelo time. */
+   o 500 da Inter). Família escolhida pelo time em 17/07/2026: Fraunces. */
 :root {
-  --font-display-family: var(--font-instrument-serif), Georgia, serif;
+  --font-display-family: var(--font-fraunces), Georgia, serif;
 }
 
 @utility font-display {

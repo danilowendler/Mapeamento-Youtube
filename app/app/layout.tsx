@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BrandMark } from "@/components/BrandMark";
-import { AppNavMobile, AppNavSidebar } from "@/features/shell/AppNav";
+import { AppNavMobile } from "@/features/shell/AppNav";
+import { AppSidebar } from "@/features/shell/AppSidebar";
 import { createClient } from "@/lib/supabase/server";
 import { getEffectivePlan } from "@/services/planService";
 
@@ -28,34 +29,13 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar (desktop) — identidade, navegação e quem sou eu */}
-      <aside className="sticky top-0 hidden h-screen w-[232px] shrink-0 flex-col border-r border-hairline md:flex">
-        <Link
-          href="/app"
-          className="flex h-[64px] items-center border-b border-hairline px-sm"
-        >
-          <BrandMark />
-        </Link>
-
-        <AppNavSidebar />
-
-        <div className="mt-auto flex items-center gap-xs border-t border-hairline p-sm">
-          <span
-            aria-hidden="true"
-            className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full bg-canvas-elevated text-title-sm text-ink"
-          >
-            {initial}
-          </span>
-          <span className="min-w-0">
-            <span className="block truncate text-body-sm text-ink">
-              {name}
-            </span>
-            <span className="block text-caption-upper uppercase text-muted-soft">
-              plano {plan.name}
-            </span>
-          </span>
-        </div>
-      </aside>
+      {/* Sidebar (desktop) — identidade, navegação e popover do usuário */}
+      <AppSidebar
+        name={name}
+        initial={initial}
+        planName={plan.name}
+        isFree={plan.code === "free"}
+      />
 
       {/* Barra superior (mobile) */}
       <div className="flex min-w-0 flex-1 flex-col">

@@ -3,51 +3,25 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const links = [
-  { href: "/app", label: "Nova Pesquisa" },
-  { href: "/app/historico", label: "Histórico" },
-  { href: "/app/pauta", label: "Minha Pauta" },
-  { href: "/app/conta", label: "Conta" },
+/**
+ * Itens de navegação do BEVIEWER (M10.5, lote B1): rotas inalteradas,
+ * rótulos novos. "Settings" saiu da nav do desktop (vive no popover do
+ * usuário — AppSidebar); no mobile permanece como 4º item.
+ */
+export const NAV_LINKS = [
+  { href: "/app", label: "Mapping" },
+  { href: "/app/historico", label: "Dashboard" },
+  { href: "/app/pauta", label: "Workspace" },
 ] as const;
 
-function isActive(href: string, pathname: string): boolean {
+export function isActive(href: string, pathname: string): boolean {
   return href === "/app" ? pathname === "/app" : pathname.startsWith(href);
 }
 
-/**
- * Navegação lateral (desktop): item ativo marcado com a régua
- * vermelha — o mesmo uso cirúrgico do acento da landing.
- */
-export function AppNavSidebar() {
-  const pathname = usePathname();
-  return (
-    <nav aria-label="Navegação principal" className="flex flex-col py-xs">
-      {links.map(({ href, label }) => {
-        const active = isActive(href, pathname);
-        return (
-          <Link
-            key={href}
-            href={href}
-            aria-current={active ? "page" : undefined}
-            className={`relative flex items-center px-sm py-xs text-nav-link uppercase transition-colors ${
-              active
-                ? "text-ink"
-                : "text-muted-soft hover:bg-canvas-elevated/30 hover:text-body"
-            }`}
-          >
-            {active && (
-              <span
-                aria-hidden="true"
-                className="absolute inset-y-[10px] left-0 w-[2px] bg-primary"
-              />
-            )}
-            {label}
-          </Link>
-        );
-      })}
-    </nav>
-  );
-}
+const MOBILE_LINKS = [
+  ...NAV_LINKS,
+  { href: "/app/conta", label: "Settings" },
+] as const;
 
 /** Barra inferior (mobile). */
 export function AppNavMobile() {
@@ -57,7 +31,7 @@ export function AppNavMobile() {
       aria-label="Navegação principal"
       className="fixed inset-x-0 bottom-0 z-10 flex border-t border-hairline bg-canvas md:hidden"
     >
-      {links.map(({ href, label }) => {
+      {MOBILE_LINKS.map(({ href, label }) => {
         const active = isActive(href, pathname);
         return (
           <Link
