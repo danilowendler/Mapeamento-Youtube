@@ -1,0 +1,599 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import {
+  Bookmark,
+  Folder,
+  FolderOpen,
+  GripVertical,
+  Plus,
+  Star,
+  Undo2,
+} from "lucide-react";
+import { ScoreBadge } from "@/features/results/ScoreBadge";
+import { CategoryHeader } from "@/features/pauta/CategoryHeader";
+import {
+  createCategory,
+  moveChannelRef,
+  moveFavorite,
+  type FolderKind,
+} from "@/features/pauta/actions";
+import { formatCompactCount } from "@/utils/format";
+
+export type WorkspaceFolder = {
+  id: string;
+  name: string;
+  kind: FolderKind;
+};
+
+export type VideoItem = {
+  videoId: string;
+  title: string;
+  channelTitle: string;
+  score: number;
+  thumbnailUrl: string | null;
+  folderId: string | null;
+};
+
+export type ChannelItem = {
+  channelId: string;
+  title: string;
+  subscriberCount: number | null;
+  thumbnailUrl: string | null;
+  folderId: string | null;
+};
+
+type DragItem = { type: "video" | "channel"; id: string };
+
+const KIND_LABEL: Record<FolderKind, string> = {
+  pautas: "Pautas",
+  referencias: "Referências",
+};
+const KIND_FOR_TYPE: Record<DragItem["type"], FolderKind> = {
+  video: "pautas",
+  channel: "referencias",
+};
+
+/**
+ * Workspace (M10.5, lote B5 — prints 05/06), desenhado para quem
+ * chega sem contexto: todo card declara seu tipo, todo movimento tem
+ * dois caminhos (arrastar OU o seletor "Mover para"), alvos inválidos
+ * se apagam durante o arrasto e os estados vazios ensinam de onde os
+ * itens vêm.
+ */
+export function WorkspaceBoard({
+  folders,
+  videos,
+  channels,
+}: {
+  folders: WorkspaceFolder[];
+  videos: VideoItem[];
+  channels: ChannelItem[];
+}) {
+  const router = useRouter();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [dragging, setDragging] = useState<DragItem | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
+  const [overrides, setOverrides] = useState<Map<string, string | null>>(
+    new Map(),
+  );
+  const [error, setError] = useState<string | undefined>();
+  const [, startTransition] = useTransition();
+
+  // Formulário de criação
+  const [newName, setNewName] = useState("");
+  const [creating, setCreating] = useState<FolderKind | null>(null);
+  const [createError, setCreateError] = useState<string | undefined>();
+
+  const keyOf = (item: DragItem) => `${item.type}:${item.id}`;
+  const folderOf = (item: DragItem, original: string | null) =>
+    overrides.has(keyOf(item)) ? (overrides.get(keyOf(item)) ?? null) : original;
+
+  const knownIds = new Set(folders.map((f) => f.id));
+  const locate = (item: DragItem, raw: string | null) => {
+    const id = folderOf(item, raw);
+    return id !== null && knownIds.has(id) ? id : null;
+  };
+
+  const looseVideos = videos.filter(
+    (v) => locate({ type: "video", id: v.videoId }, v.folderId) === null,
+  );
+  const looseChannels = channels.filter(
+    (c) => locate({ type: "channel", id: c.channelId }, c.folderId) === null,
+  );
+
+  const countOf = (folder: WorkspaceFolder) =>
+    folder.kind === "pautas"
+      ? videos.filter(
+          (v) => locate({ type: "video", id: v.videoId }, v.folderId) === folder.id,
+        ).length
+      : channels.filter(
+          (c) =>
+            locate({ type: "channel", id: c.channelId }, c.folderId) ===
+            folder.id,
+        ).length;
+
+  function move(item: DragItem, folderId: string | null) {
+    setError(undefined);
+    setOverrides((current) => {
+      const next = new Map(current);
+      next.set(keyOf(item), folderId);
+      return next;
+    });
+    startTransition(async () => {
+      const result =
+        item.type === "video"
+          ? await moveFavorite(item.id, folderId)
+          : await moveChannelRef(item.id, folderId);
+      if (result.error) {
+        setOverrides((current) => {
+          const next = new Map(current);
+          next.delete(keyOf(item));
+          return next;
+        });
+        setError(result.error);
+        return;
+      }
+      router.refresh();
+    });
+  }
+
+  function submitCreate(kind: FolderKind) {
+    setCreateError(undefined);
+    setCreating(kind);
+    startTransition(async () => {
+      const result = await createCategory(newName, kind);
+      setCreating(null);
+      if (result.error) {
+        setCreateError(result.error);
+        return;
+      }
+      setNewName("");
+      router.refresh();
+    });
+  }
+
+  const selected = folders.find((f) => f.id === selectedId) ?? null;
+  const selectedItems: (VideoItem | ChannelItem)[] = selected
+    ? selected.kind === "pautas"
+      ? videos.filter(
+          (v) =>
+            locate({ type: "video", id: v.videoId }, v.folderId) === selected.id,
+        )
+      : channels.filter(
+          (c) =>
+            locate({ type: "channel", id: c.channelId }, c.folderId) ===
+            selected.id,
+        )
+    : [];
+
+  const hasAnything = videos.length > 0 || channels.length > 0;
+
+  /* ---- handlers de drop por pasta ---- */
+  function folderDropProps(folder: WorkspaceFolder) {
+    const accepts = dragging !== null && KIND_FOR_TYPE[dragging.type] === folder.kind;
+    return {
+      onDragOver: (event: React.DragEvent) => {
+        if (!accepts) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+        setDropTarget(folder.id);
+      },
+      onDragLeave: () => {
+        setDropTarget((current) => (current === folder.id ? null : current));
+      },
+      onDrop: (event: React.DragEvent) => {
+        if (!accepts || !dragging) return;
+        event.preventDefault();
+        move(dragging, folder.id);
+        setDragging(null);
+        setDropTarget(null);
+      },
+    };
+  }
+
+  function dragProps(item: DragItem) {
+    return {
+      draggable: true,
+      onDragStart: (event: React.DragEvent) => {
+        event.dataTransfer.setData("text/plain", keyOf(item));
+        event.dataTransfer.effectAllowed = "move";
+        setDragging(item);
+      },
+      onDragEnd: () => {
+        setDragging(null);
+        setDropTarget(null);
+      },
+    };
+  }
+
+  const moveSelect = (
+    item: DragItem,
+    current: string | null,
+    kind: FolderKind,
+  ) => {
+    const options = folders.filter((f) => f.kind === kind);
+    return (
+      <label className="flex items-center gap-xxxs text-caption text-muted-soft">
+        Mover para
+        <select
+          value={current ?? ""}
+          onChange={(event) =>
+            move(item, event.target.value === "" ? null : event.target.value)
+          }
+          className="h-[28px] cursor-pointer rounded-sm border border-hairline bg-canvas px-xxxs text-caption text-body"
+        >
+          <option value="">Soltos</option>
+          {options.length === 0 && (
+            <option value="" disabled>
+              crie uma pasta de {KIND_LABEL[kind]}
+            </option>
+          )}
+          {options.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-sm">
+      {error && <p className="text-body-sm text-warning">{error}</p>}
+
+      {/* Criação de pastas — os dois tipos lado a lado, com explicação */}
+      <div className="flex flex-col gap-xxs rounded-md border border-hairline p-sm">
+        <div className="flex flex-wrap items-center gap-xxs">
+          <label htmlFor="new-folder" className="sr-only">
+            Nome da nova pasta
+          </label>
+          <input
+            id="new-folder"
+            value={newName}
+            onChange={(event) => setNewName(event.target.value)}
+            maxLength={40}
+            placeholder="Nome da nova pasta"
+            className="h-[40px] w-full max-w-[320px] rounded-sm border border-hairline bg-canvas px-xxs text-body-md text-ink placeholder:text-muted"
+          />
+          <button
+            type="button"
+            onClick={() => submitCreate("pautas")}
+            disabled={creating !== null || newName.trim().length === 0}
+            className="flex h-[40px] cursor-pointer items-center gap-xxxs rounded-full border border-hairline px-xs text-caption-upper uppercase text-body transition-colors hover:border-muted hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Plus size={14} strokeWidth={2} />
+            {creating === "pautas" ? "Criando…" : "Pasta de Pautas"}
+          </button>
+          <button
+            type="button"
+            onClick={() => submitCreate("referencias")}
+            disabled={creating !== null || newName.trim().length === 0}
+            className="flex h-[40px] cursor-pointer items-center gap-xxxs rounded-full border border-hairline px-xs text-caption-upper uppercase text-body transition-colors hover:border-muted hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Plus size={14} strokeWidth={2} />
+            {creating === "referencias" ? "Criando…" : "Pasta de Referências"}
+          </button>
+        </div>
+        <p className="text-caption text-muted">
+          Pastas de <span className="text-body">Pautas</span> guardam vídeos
+          favoritados · pastas de{" "}
+          <span className="text-body">Referências</span> guardam canais
+          salvos.
+        </p>
+        {createError && (
+          <p className="text-body-sm text-warning">{createError}</p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 gap-sm md:grid-cols-[1fr_300px]">
+        {/* Coluna principal: pastas + soltos */}
+        <div className="flex min-w-0 flex-col gap-sm">
+          <section aria-label="Pastas" className="flex flex-col gap-xxs">
+            <h2 className="text-caption-upper uppercase text-muted-soft">
+              Pastas
+            </h2>
+            {folders.length === 0 ? (
+              <p className="rounded-md border border-dashed border-hairline p-sm text-body-sm text-body">
+                Você ainda não tem pastas — crie a primeira acima para
+                organizar suas ideias.
+              </p>
+            ) : (
+              <ul className="grid grid-cols-2 gap-xxs sm:grid-cols-3">
+                {folders.map((folder) => {
+                  const isDrop = dropTarget === folder.id;
+                  const rejected =
+                    dragging !== null &&
+                    KIND_FOR_TYPE[dragging.type] !== folder.kind;
+                  const isSelected = selectedId === folder.id;
+                  return (
+                    <li key={folder.id}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedId(isSelected ? null : folder.id)
+                        }
+                        {...folderDropProps(folder)}
+                        className={`flex w-full cursor-pointer flex-col items-center gap-xxxs rounded-md border p-xs text-center transition-colors ${
+                          isDrop
+                            ? "border-data-series bg-data-series/10"
+                            : isSelected
+                              ? "border-muted bg-canvas-elevated/25"
+                              : "border-hairline hover:border-muted"
+                        } ${rejected ? "opacity-40" : ""}`}
+                        title={
+                          rejected
+                            ? `Este item não entra aqui — ${
+                                folder.kind === "pautas"
+                                  ? "esta pasta guarda vídeos"
+                                  : "esta pasta guarda canais"
+                              }`
+                            : undefined
+                        }
+                      >
+                        {isSelected ? (
+                          <FolderOpen
+                            size={28}
+                            strokeWidth={1.4}
+                            className="text-body"
+                          />
+                        ) : (
+                          <Folder
+                            size={28}
+                            strokeWidth={1.4}
+                            className="text-body"
+                          />
+                        )}
+                        <span className="w-full truncate text-body-sm text-ink">
+                          {folder.name}
+                        </span>
+                        <span
+                          className={`text-caption-upper uppercase ${
+                            folder.kind === "referencias"
+                              ? "text-data-series"
+                              : "text-muted-soft"
+                          }`}
+                        >
+                          {KIND_LABEL[folder.kind]} · {countOf(folder)}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          <section
+            aria-label="Itens soltos"
+            className="flex flex-col gap-xxs"
+          >
+            <h2 className="text-caption-upper uppercase text-muted-soft">
+              Soltos — arraste para uma pasta
+            </h2>
+            <p className="text-caption text-muted">
+              Sem pressa: dá para arrastar cada card ou usar o seletor
+              “Mover para” dele.
+            </p>
+
+            {!hasAnything ? (
+              <div className="flex flex-col gap-xs rounded-md border border-dashed border-hairline p-sm">
+                <p className="flex items-start gap-xxs text-body-sm text-body">
+                  <Star
+                    size={16}
+                    strokeWidth={1.6}
+                    className="mt-[2px] shrink-0 text-focus-ring"
+                  />
+                  Favorite oportunidades (☆) em qualquer pesquisa — elas
+                  aparecem aqui como cards de vídeo.
+                </p>
+                <p className="flex items-start gap-xxs text-body-sm text-body">
+                  <Bookmark
+                    size={16}
+                    strokeWidth={1.6}
+                    className="mt-[2px] shrink-0 text-data-series"
+                  />
+                  Salve canais nos resultados de uma pesquisa — eles viram
+                  cards de canal, seus concorrentes de referência.
+                </p>
+                <Link
+                  href="/app"
+                  className="w-fit text-body-sm text-ink underline"
+                >
+                  Começar um mapeamento
+                </Link>
+              </div>
+            ) : looseVideos.length === 0 && looseChannels.length === 0 ? (
+              <p className="rounded-md border border-dashed border-hairline p-sm text-body-sm text-body">
+                Tudo organizado — novos favoritos e canais salvos chegam
+                aqui.
+              </p>
+            ) : (
+              <ul className="grid grid-cols-1 gap-xxs sm:grid-cols-2">
+                {looseVideos.map((video) => (
+                  <li
+                    key={video.videoId}
+                    {...dragProps({ type: "video", id: video.videoId })}
+                    className={`flex cursor-grab flex-col gap-xxs rounded-md border border-hairline p-xxs active:cursor-grabbing ${
+                      dragging?.id === video.videoId ? "opacity-50" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-xxs">
+                      <GripVertical
+                        size={14}
+                        strokeWidth={1.6}
+                        aria-hidden="true"
+                        className="shrink-0 text-muted"
+                      />
+                      <div className="relative h-[40px] w-[71px] shrink-0 overflow-hidden rounded-xs bg-canvas-elevated">
+                        {video.thumbnailUrl && (
+                          <Image
+                            src={video.thumbnailUrl}
+                            alt=""
+                            fill
+                            sizes="71px"
+                            className="object-cover"
+                          />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-1 text-body-sm text-ink">
+                          {video.title}
+                        </p>
+                        <p className="truncate text-caption text-muted">
+                          {video.channelTitle}
+                        </p>
+                      </div>
+                      <ScoreBadge score={video.score} />
+                    </div>
+                    <div className="flex items-center justify-between gap-xxs">
+                      <span className="rounded-full border border-hairline px-xxs text-caption-upper uppercase text-muted-soft">
+                        vídeo
+                      </span>
+                      {moveSelect(
+                        { type: "video", id: video.videoId },
+                        locate({ type: "video", id: video.videoId }, video.folderId),
+                        "pautas",
+                      )}
+                    </div>
+                  </li>
+                ))}
+                {looseChannels.map((channel) => (
+                  <li
+                    key={channel.channelId}
+                    {...dragProps({ type: "channel", id: channel.channelId })}
+                    className={`flex cursor-grab flex-col gap-xxs rounded-md border border-hairline p-xxs active:cursor-grabbing ${
+                      dragging?.id === channel.channelId ? "opacity-50" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-xxs">
+                      <GripVertical
+                        size={14}
+                        strokeWidth={1.6}
+                        aria-hidden="true"
+                        className="shrink-0 text-muted"
+                      />
+                      <div className="relative h-[36px] w-[36px] shrink-0 overflow-hidden rounded-full bg-canvas-elevated">
+                        {channel.thumbnailUrl ? (
+                          <Image
+                            src={channel.thumbnailUrl}
+                            alt=""
+                            fill
+                            sizes="36px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <span className="flex h-full w-full items-center justify-center text-body-sm text-ink">
+                            {channel.title.charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-1 text-body-sm text-ink">
+                          {channel.title}
+                        </p>
+                        <p className="text-caption text-muted">
+                          {channel.subscriberCount !== null
+                            ? `${formatCompactCount(channel.subscriberCount)} inscritos`
+                            : "canal de referência"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-xxs">
+                      <span className="rounded-full border border-hairline px-xxs text-caption-upper uppercase text-data-series">
+                        canal
+                      </span>
+                      {moveSelect(
+                        { type: "channel", id: channel.channelId },
+                        locate(
+                          { type: "channel", id: channel.channelId },
+                          channel.folderId,
+                        ),
+                        "referencias",
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+
+        {/* Painel lateral: conteúdo da pasta selecionada */}
+        <aside
+          aria-label="Conteúdo da pasta selecionada"
+          className="h-fit rounded-md border border-hairline p-sm md:sticky md:top-md"
+        >
+          {selected === null ? (
+            <p className="text-body-sm text-body">
+              Clique numa pasta para ver o que tem dentro — e para
+              renomeá-la ou excluí-la.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-xs">
+              <CategoryHeader
+                key={selected.id}
+                id={selected.id}
+                name={selected.name}
+                count={selectedItems.length}
+                noun={
+                  selected.kind === "pautas"
+                    ? ["vídeo", "vídeos"]
+                    : ["canal", "canais"]
+                }
+              />
+              {selectedItems.length === 0 ? (
+                <p className="text-body-sm text-body">
+                  Pasta vazia — arraste um card de{" "}
+                  {selected.kind === "pautas" ? "vídeo" : "canal"} até ela,
+                  ou use o “Mover para” do card.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-xxs">
+                  {selectedItems.map((item) => {
+                    const isVideo = "videoId" in item;
+                    const drag: DragItem = isVideo
+                      ? { type: "video", id: item.videoId }
+                      : { type: "channel", id: item.channelId };
+                    return (
+                      <li
+                        key={drag.id}
+                        className="flex items-center justify-between gap-xxs border-b border-hairline pb-xxs"
+                      >
+                        <div className="min-w-0">
+                          <p className="line-clamp-1 text-body-sm text-ink">
+                            {item.title}
+                          </p>
+                          <p className="truncate text-caption text-muted">
+                            {isVideo
+                              ? item.channelTitle
+                              : item.subscriberCount !== null
+                                ? `${formatCompactCount(item.subscriberCount)} inscritos`
+                                : "canal"}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => move(drag, null)}
+                          title="Devolver para os Soltos"
+                          className="flex shrink-0 cursor-pointer items-center gap-xxxs rounded-full border border-hairline px-xxs py-xxxs text-caption text-body transition-colors hover:border-muted hover:text-ink"
+                        >
+                          <Undo2 size={12} strokeWidth={1.6} />
+                          soltar
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          )}
+        </aside>
+      </div>
+    </div>
+  );
+}

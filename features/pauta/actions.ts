@@ -35,13 +35,19 @@ async function requirePlanWithFavorites() {
   return { supabase, user };
 }
 
+export type FolderKind = "pautas" | "referencias";
+
 export async function createCategory(
   rawName: string,
+  kind: FolderKind = "pautas",
 ): Promise<PautaActionResult> {
   const gate = await requirePlanWithFavorites();
   if ("error" in gate) return { error: gate.error };
   const parsed = nameSchema.safeParse(rawName);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (kind !== "pautas" && kind !== "referencias") {
+    return { error: "Tipo de pasta inválido." };
+  }
 
   // Posição: fim da lista (corrida entre abas é inofensiva aqui)
   const { data: last } = await gate.supabase
@@ -54,6 +60,7 @@ export async function createCategory(
   const { error } = await gate.supabase.from("pauta_categories").insert({
     user_id: gate.user.id,
     name: parsed.data,
+    kind,
     position: (last?.position ?? -1) + 1,
   });
   if (error) {
@@ -123,13 +130,17 @@ export async function moveFavorite(
       return { error: "Categoria inválida." };
     }
     // FKs ignoram RLS: sem esta checagem daria para apontar o favorito
-    // para a categoria de outro usuário (e sumir da própria pauta)
+    // para a pasta de outro usuário (e sumir do próprio workspace).
+    // Regra de tipo: vídeo só entra em pasta de Pautas.
     const { data: owned } = await gate.supabase
       .from("pauta_categories")
-      .select("id")
+      .select("id, kind")
       .eq("id", categoryId)
       .maybeSingle();
-    if (!owned) return { error: "Categoria inválida." };
+    if (!owned) return { error: "Pasta inválida." };
+    if (owned.kind !== "pautas") {
+      return { error: "Vídeos só entram em pastas de Pautas." };
+    }
   }
 
   // RLS (favorites_update_own) limita o update ao dono
@@ -137,6 +148,66 @@ export async function moveFavorite(
     .from("favorites")
     .update({ category_id: categoryId })
     .eq("video_id", videoId);
+  if (error) return { error: "Erro ao mover. Tente novamente." };
+
+  revalidatePath("/app/pauta");
+  return {};
+}
+
+/** Salva/remove um canal de referência (botão nos resultados). */
+export async function setChannelRef(
+  channelId: string,
+  saved: boolean,
+): Promise<PautaActionResult & { saved?: boolean }> {
+  const gate = await requirePlanWithFavorites();
+  if ("error" in gate) return { error: gate.error };
+  if (!channelId.trim()) return { error: "Canal inválido." };
+
+  if (saved) {
+    const { error } = await gate.supabase.from("channel_refs").upsert(
+      { user_id: gate.user.id, channel_id: channelId },
+      { onConflict: "user_id,channel_id", ignoreDuplicates: true },
+    );
+    if (error) return { error: "Erro ao salvar o canal. Tente novamente." };
+  } else {
+    const { error } = await gate.supabase
+      .from("channel_refs")
+      .delete()
+      .eq("channel_id", channelId);
+    if (error) return { error: "Erro ao remover. Tente novamente." };
+  }
+
+  revalidatePath("/app/pauta");
+  return { saved };
+}
+
+export async function moveChannelRef(
+  channelId: string,
+  folderId: string | null,
+): Promise<PautaActionResult> {
+  const gate = await requirePlanWithFavorites();
+  if ("error" in gate) return { error: gate.error };
+
+  if (folderId !== null) {
+    if (!idSchema.safeParse(folderId).success) {
+      return { error: "Pasta inválida." };
+    }
+    // Mesmo raciocínio do moveFavorite; canal só entra em Referências
+    const { data: owned } = await gate.supabase
+      .from("pauta_categories")
+      .select("id, kind")
+      .eq("id", folderId)
+      .maybeSingle();
+    if (!owned) return { error: "Pasta inválida." };
+    if (owned.kind !== "referencias") {
+      return { error: "Canais só entram em pastas de Referências." };
+    }
+  }
+
+  const { error } = await gate.supabase
+    .from("channel_refs")
+    .update({ folder_id: folderId })
+    .eq("channel_id", channelId);
   if (error) return { error: "Erro ao mover. Tente novamente." };
 
   revalidatePath("/app/pauta");

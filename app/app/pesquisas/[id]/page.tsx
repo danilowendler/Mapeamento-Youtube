@@ -127,6 +127,18 @@ export default async function ResultadosPage({
     });
   }
 
+  // Canais já salvos como referência (RLS filtra por dono) — B5
+  const { data: savedRows } =
+    allChannelIds.length > 0
+      ? await supabase
+          .from("channel_refs")
+          .select("channel_id")
+          .in("channel_id", allChannelIds)
+      : { data: [] };
+  const savedChannelIds = new Set(
+    (savedRows ?? []).map((row) => row.channel_id),
+  );
+
   const chips: ChannelChip[] = (results ?? []).map((result) => ({
     channelId: result.channel_id,
     title: channelById.get(result.channel_id)?.title ?? result.channel_id,
@@ -140,6 +152,7 @@ export default async function ResultadosPage({
             : "no_eligible",
     opportunities: cards.filter((c) => c.channelId === result.channel_id)
       .length,
+    saved: savedChannelIds.has(result.channel_id),
   }));
 
   const failedInputs = (search.failed_inputs ?? []) as string[];

@@ -1,8 +1,12 @@
+import { SaveChannelButton } from "@/features/pauta/SaveChannelButton";
+
 export type ChannelChip = {
   channelId: string;
   title: string;
   state: "collecting" | "ready" | "no_eligible" | "failed";
   opportunities: number;
+  /** true quando o canal já está salvo como referência no Workspace. */
+  saved: boolean;
 };
 
 /**
@@ -52,6 +56,10 @@ export function ChannelChips({ chips }: { chips: ChannelChip[] }) {
           {chip.state === "failed" && (
             <span className="text-warning">falhou</span>
           )}
+          <SaveChannelButton
+            channelId={chip.channelId}
+            initialSaved={chip.saved}
+          />
         </li>
       ))}
     </ul>

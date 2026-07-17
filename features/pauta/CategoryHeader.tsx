@@ -12,10 +12,12 @@ export function CategoryHeader({
   id,
   name,
   count,
+  noun = ["ideia", "ideias"],
 }: {
   id: string;
   name: string;
   count: number;
+  noun?: [string, string];
 }) {
   const [mode, setMode] = useState<"view" | "rename" | "confirm-delete">(
     "view",
@@ -89,7 +91,7 @@ export function CategoryHeader({
           <h2 className="text-title-md text-ink">
             {name}{" "}
             <span className="text-body-sm font-normal text-muted-soft">
-              · {count} {count === 1 ? "ideia" : "ideias"}
+              · {count} {count === 1 ? noun[0] : noun[1]}
             </span>
           </h2>
         )}
