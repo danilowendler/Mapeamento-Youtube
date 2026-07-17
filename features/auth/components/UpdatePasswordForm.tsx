@@ -19,7 +19,7 @@ export function UpdatePasswordForm() {
 
   return (
     <form action={formAction} className="flex max-w-[400px] flex-col gap-sm">
-      <h1 className="text-display-md text-ink">Nova senha</h1>
+      <h1 className="font-display text-display-md text-ink">Nova senha</h1>
       <FormMessage error={state.error} />
       <Input
         id="password"

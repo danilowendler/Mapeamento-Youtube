@@ -22,9 +22,9 @@ export default async function ContaPage() {
 
   return (
     <div className="mx-auto flex max-w-[720px] flex-col gap-md pt-xl">
-      <h1 className="text-display-lg text-ink">Conta</h1>
+      <h1 className="font-display text-display-lg text-ink">Conta</h1>
 
-      <dl className="flex flex-col gap-xs border border-hairline p-sm">
+      <dl className="flex flex-col gap-xs rounded-md border border-hairline p-sm">
         <div>
           <dt className="text-caption-upper uppercase text-muted">Nome</dt>
           <dd className="text-body-md text-ink">

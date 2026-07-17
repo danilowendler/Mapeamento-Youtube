@@ -6,8 +6,8 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
 };
 
 /**
- * Campo de texto do design system: 48px, raio 4px, hairline
- * (DESIGN-ferrari.md · text-input-on-dark).
+ * Campo de texto do design system: 48px, raio sm, hairline
+ * (DESIGN-ferrari.md v2 · text-input-on-dark).
  */
 export function Input({ label, error, id, ...props }: InputProps) {
   return (

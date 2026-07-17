@@ -126,10 +126,10 @@ export default async function HistoricoPage() {
 
   return (
     <div className="mx-auto flex max-w-[720px] flex-col gap-md pt-xl">
-      <h1 className="text-display-lg text-ink">Histórico</h1>
+      <h1 className="font-display text-display-lg text-ink">Histórico</h1>
 
       {!hasSearches ? (
-        <p className="border border-dashed border-hairline p-sm text-body-md text-body">
+        <p className="rounded-md border border-dashed border-hairline p-sm text-body-md text-body">
           Nenhuma pesquisa ainda —{" "}
           <Link href="/app" className="text-ink underline">
             faça a primeira
@@ -142,7 +142,7 @@ export default async function HistoricoPage() {
             {tiles.map((tile) => (
               <div
                 key={tile.label}
-                className="flex flex-col gap-xxxs border border-hairline p-xs"
+                className="flex flex-col gap-xxxs rounded-md border border-hairline p-xs"
               >
                 <span className="text-caption text-muted-soft">
                   {tile.label}

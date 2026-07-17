@@ -107,7 +107,7 @@ export function SearchForm({ niches }: { niches: NicheOption[] }) {
     <div className="flex flex-col gap-sm">
       <FormMessage error={error} />
 
-      <div className="grid grid-cols-1 divide-y divide-hairline border border-hairline lg:grid-cols-3 lg:divide-x lg:divide-y-0">
+      <div className="grid grid-cols-1 divide-y divide-hairline overflow-hidden rounded-md border border-hairline lg:grid-cols-3 lg:divide-x lg:divide-y-0">
         <section
           aria-labelledby="panel-niche"
           className="flex flex-col gap-xs p-sm"
@@ -131,7 +131,7 @@ export function SearchForm({ niches }: { niches: NicheOption[] }) {
                     submit({ mode: "niche", nicheSlug: niche.slug }, niche.slug)
                   }
                   disabled={Boolean(submitting)}
-                  className="group flex h-full w-full cursor-pointer flex-col gap-xxxs border border-hairline px-xs py-xs text-left transition-colors hover:border-muted hover:bg-canvas-elevated/25 disabled:opacity-50"
+                  className="group flex h-full w-full cursor-pointer flex-col gap-xxxs rounded-sm border border-hairline px-xs py-xs text-left transition-colors hover:border-muted hover:bg-canvas-elevated/25 disabled:opacity-50"
                 >
                   <span className="flex w-full items-center justify-between text-title-sm text-ink">
                     {submitting === niche.slug ? "Iniciando…" : niche.name}

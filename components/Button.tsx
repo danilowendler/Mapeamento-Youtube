@@ -5,8 +5,8 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 /**
- * Botão do design system: cantos retos, label uppercase com tracking,
- * 48px de altura (DESIGN-ferrari.md · button-primary / button-outline).
+ * Botão do design system: label uppercase com tracking, 48px de
+ * altura, raio sm (DESIGN-ferrari.md v2 · button-primary / outline).
  */
 export function Button({
   variant = "primary",
@@ -14,7 +14,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const base =
-    "inline-flex h-[48px] cursor-pointer items-center justify-center px-md text-button-label uppercase transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50";
+    "inline-flex h-[48px] cursor-pointer items-center justify-center rounded-sm px-md text-button-label uppercase transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50";
   const variants = {
     primary: "bg-primary text-on-primary active:bg-primary-active",
     outline:

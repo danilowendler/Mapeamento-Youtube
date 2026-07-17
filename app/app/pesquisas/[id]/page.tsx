@@ -169,14 +169,16 @@ export default async function ResultadosPage({
       <header className="flex flex-col gap-xs">
         <div className="flex items-start justify-between gap-xs">
           <div className="flex flex-col gap-xxxs">
-            <h1 className="text-display-md text-ink">Oportunidades</h1>
+            <h1 className="font-display text-display-md text-ink">
+              Oportunidades
+            </h1>
             {subtitle && <p className="text-body-sm text-body">{subtitle}</p>}
           </div>
           {isDone && cards.length > 0 && (
             limits.export ? (
               <a
                 href={`/api/searches/${search.id}/export`}
-                className="inline-flex h-[36px] shrink-0 items-center border border-ink px-xs text-caption-upper uppercase text-ink"
+                className="inline-flex h-[36px] shrink-0 items-center rounded-sm border border-ink px-xs text-caption-upper uppercase text-ink"
               >
                 Exportar CSV
               </a>
@@ -184,7 +186,7 @@ export default async function ResultadosPage({
               <Link
                 href="/app/conta#planos"
                 title="Exportação disponível nos planos Criador e Pro"
-                className="inline-flex h-[36px] shrink-0 items-center gap-xxxs border border-hairline px-xs text-caption-upper uppercase text-muted-soft hover:text-body"
+                className="inline-flex h-[36px] shrink-0 items-center gap-xxxs rounded-sm border border-hairline px-xs text-caption-upper uppercase text-muted-soft hover:text-body"
               >
                 Exportar CSV · planos pagos
               </Link>
@@ -209,13 +211,13 @@ export default async function ResultadosPage({
       </header>
 
       {search.status === "failed" ? (
-        <p className="border border-warning/40 p-sm text-body-md text-warning">
+        <p className="rounded-md border border-warning/40 p-sm text-body-md text-warning">
           Não conseguimos analisar nenhum dos canais informados. Verifique as
           entradas e tente novamente.
         </p>
       ) : cards.length === 0 && search.status !== "running" &&
         search.status !== "queued" ? (
-        <p className="border border-dashed border-hairline p-sm text-body-md text-body">
+        <p className="rounded-md border border-dashed border-hairline p-sm text-body-md text-body">
           Nenhum vídeo com {MIN_OPPORTUNITY_SCORE}× ou mais acima da mediana —
           os vídeos destes canais performam de forma uniforme.
         </p>

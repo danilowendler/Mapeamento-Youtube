@@ -24,7 +24,7 @@ export default async function NovaPesquisaPage() {
         <span className="text-caption-upper uppercase tracking-widest text-primary">
           Central de pesquisa
         </span>
-        <h1 className="text-display-lg text-ink">
+        <h1 className="font-display text-display-lg text-ink">
           O que você quer mapear hoje{firstName ? `, ${firstName}` : ""}?
         </h1>
         <p className="text-body-md text-body">
@@ -36,7 +36,7 @@ export default async function NovaPesquisaPage() {
       <UsageMeter usage={usage} />
 
       {exhausted ? (
-        <div className="flex flex-col gap-xxs border border-hairline p-sm">
+        <div className="flex flex-col gap-xxs rounded-md border border-hairline p-sm">
           <p className="text-title-sm text-ink">
             Você usou as {usage.limit} pesquisas do mês
           </p>
@@ -50,7 +50,7 @@ export default async function NovaPesquisaPage() {
           </p>
           <a
             href="/app/conta#planos"
-            className="inline-flex h-[48px] w-fit items-center bg-primary px-md text-button-label uppercase text-on-primary active:bg-primary-active"
+            className="inline-flex h-[48px] w-fit items-center rounded-sm bg-primary px-md text-button-label uppercase text-on-primary active:bg-primary-active"
           >
             Ver planos
           </a>

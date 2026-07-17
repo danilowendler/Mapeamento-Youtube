@@ -23,9 +23,9 @@ export function VideoCard({
       href={`https://www.youtube.com/watch?v=${card.videoId}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex gap-xs border border-hairline p-xs transition-all duration-150 hover:border-muted hover:bg-canvas-elevated/20"
+      className="flex gap-xs rounded-md border border-hairline p-xs transition-all duration-150 hover:border-muted hover:bg-canvas-elevated/20"
     >
-      <div className="relative h-[68px] w-[120px] shrink-0 overflow-hidden bg-canvas-elevated">
+      <div className="relative h-[68px] w-[120px] shrink-0 overflow-hidden rounded-sm bg-canvas-elevated">
         {card.thumbnailUrl ? (
           <Image
             src={card.thumbnailUrl}
@@ -67,7 +67,7 @@ export function VideoCard({
           {card.baselineViews !== null &&
             `${formatCompactCount(card.viewCount ?? 0)} views vs. mediana de ${formatCompactCount(card.baselineViews)} do canal`}
           {card.lowConfidence && (
-            <span className="ml-xxs border border-hairline px-[4px] text-caption-upper uppercase">
+            <span className="ml-xxs rounded-xs border border-hairline px-[4px] text-caption-upper uppercase">
               amostra pequena
             </span>
           )}

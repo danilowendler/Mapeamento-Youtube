@@ -164,6 +164,28 @@ referência → arquiteto adapta ao design system → deploy → avaliação).
 regressão de performance (skeletons/otimista preservados), suite
 verde, migrations aplicadas em dev+prod quando houver.
 
+## M10.5 · BEVIEWER — rebrand + reescopo do /app (17/07/2026)
+
+> Decisão do time: manter a proposta (outliers) e mudar a casca para a
+> linguagem dos produtos de IA. Handoff externo em
+> `design_handoff_beviewer/HANDOFF.md` (prints mandam no layout, tokens
+> mandam no render). Marca: Sinal → **BEVIEWER** (segue via
+> `lib/brand.ts`).
+
+| Lote | Conteúdo | Status |
+|---|---|---|
+| B0 | Design system v2: raio suave (8/12/16), serif display (teste em `/app/fontes`), lucide-react | ✅ 17/07/2026 |
+| B1 | Marca BEVIEWER + sidebar recolhível (3 itens: Mapping/Dashboard/Workspace) + popover do usuário | |
+| B2 | Modal de Settings (Geral/Perfil/Plano/Conta) + `/app/conta` vira redirect | |
+| B3 | Mapping: chat central + saudação por hora + dropdowns Nichos/Canais | |
+| B4 | Dashboard: 4 tiles + gráfico semanal + faixas de score + formatos + histórico (migration faixas) | |
+| B5 | Workspace: pastas tipadas (Pautas/Referências) + canais salvos (migration) + drag-and-drop com fallback | |
+| B6 | Light mode (Personalização) — revalidar dataviz na superfície clara | |
+
+✅ Conclusão (por lote): mesmo critério da M10 + avaliação do fundador
+em produção. M9 restante (security-audit, Playwright, go-live Stripe)
+fecha DEPOIS, cobrindo as tabelas novas.
+
 ## M11 · Pós-lançamento imediato (contínuo)
 Não é milestone de construção — é regime de operação: acompanhar métricas ([doc 1, §1.7](01-visao-de-produto.md) e [doc 7, §7.5](07-monetizacao.md)), triagem de feedback, ajuste de pricing com dados reais, pedido de aumento de cota ao Google quando a fila de prioridade 1–2 represar, e priorização do roadmap pós-MVP (Pix, anual, páginas SEO do corpus, IA).
 

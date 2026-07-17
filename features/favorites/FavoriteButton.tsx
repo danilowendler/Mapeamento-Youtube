@@ -62,7 +62,7 @@ export function FavoriteButton({
       {gateMessage && (
         <span
           role="dialog"
-          className="absolute right-0 top-full z-10 mt-xxs w-[260px] border border-hairline bg-canvas-elevated p-xs text-left"
+          className="absolute right-0 top-full z-10 mt-xxs w-[260px] rounded-md border border-hairline bg-canvas-elevated p-xs text-left"
         >
           <span className="block text-body-sm text-ink">{gateMessage}</span>
           <span className="mt-xxs flex items-center gap-xs">

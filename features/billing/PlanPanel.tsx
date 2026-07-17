@@ -60,13 +60,13 @@ export function PlanPanel({ plan }: { plan: PlanInfo }) {
       <h2 className="text-title-md text-ink">Plano</h2>
 
       {plan.subscriptionStatus === "past_due" && (
-        <p className="border border-warning/40 px-xs py-xxs text-body-sm text-warning">
+        <p className="rounded-sm border border-warning/40 px-xs py-xxs text-body-sm text-warning">
           Não conseguimos renovar seu pagamento. Atualize o cartão para não
           voltar ao plano gratuito.
         </p>
       )}
 
-      <div className="flex flex-col gap-xxs border border-hairline p-sm">
+      <div className="flex flex-col gap-xxs rounded-md border border-hairline p-sm">
         <p className="text-body-md text-ink">
           {plan.name}
           {plan.cancelAtPeriodEnd && plan.currentPeriodEnd && (
@@ -102,7 +102,7 @@ export function PlanPanel({ plan }: { plan: PlanInfo }) {
           {PLAN_CARDS.filter((card) => card.code !== plan.code).map((card) => (
             <div
               key={card.code}
-              className="flex flex-col gap-xs border border-hairline p-sm"
+              className="flex flex-col gap-xs rounded-md border border-hairline p-sm"
             >
               <div className="flex items-baseline justify-between">
                 <h3 className="text-title-md text-ink">{card.name}</h3>

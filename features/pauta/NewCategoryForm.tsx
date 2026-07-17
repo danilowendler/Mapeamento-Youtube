@@ -15,7 +15,7 @@ export function NewCategoryForm() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-fit cursor-pointer border border-hairline px-xs py-xxs text-nav-link uppercase text-body transition-colors hover:border-muted hover:text-ink"
+        className="w-fit cursor-pointer rounded-sm border border-hairline px-xs py-xxs text-nav-link uppercase text-body transition-colors hover:border-muted hover:text-ink"
       >
         + Nova categoria
       </button>
@@ -59,7 +59,7 @@ export function NewCategoryForm() {
         <button
           type="submit"
           disabled={pending || name.trim().length === 0}
-          className="h-[40px] cursor-pointer bg-primary px-xs text-button-label uppercase text-on-primary transition-colors active:bg-primary-active disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-[40px] cursor-pointer rounded-sm bg-primary px-xs text-button-label uppercase text-on-primary transition-colors active:bg-primary-active disabled:cursor-not-allowed disabled:opacity-50"
         >
           {pending ? "Criando…" : "Criar"}
         </button>

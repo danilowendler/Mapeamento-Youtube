@@ -17,7 +17,7 @@ export function ChannelChips({ chips }: { chips: ChannelChip[] }) {
       {chips.map((chip) => (
         <li
           key={chip.channelId}
-          className="flex items-center gap-xxs border border-hairline px-xxs py-xxxs text-body-sm"
+          className="flex items-center gap-xxs rounded-full border border-hairline px-xxs py-xxxs text-body-sm"
           title={
             chip.state === "no_eligible"
               ? "Este canal publica com frequência altíssima — os vídeos recentes ainda estão acumulando views e não podem ser comparados com justiça."

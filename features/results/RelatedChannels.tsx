@@ -52,7 +52,7 @@ export function RelatedChannels({ related }: { related: RelatedChannel[] }) {
             <button
               onClick={() => mapChannel(channel.channelId)}
               disabled={pending !== null}
-              className="flex cursor-pointer items-center gap-xxs border border-hairline px-xs py-xxs text-body-sm transition-colors hover:border-muted disabled:opacity-50"
+              className="flex cursor-pointer items-center gap-xxs rounded-full border border-hairline px-xs py-xxs text-body-sm transition-colors hover:border-muted disabled:opacity-50"
             >
               <span className="text-ink">{channel.title}</span>
               {channel.subscriberCount !== null && (

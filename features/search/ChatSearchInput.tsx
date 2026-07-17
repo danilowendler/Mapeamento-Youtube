@@ -87,7 +87,7 @@ export function ChatSearchInput({
           onClick={send}
           disabled={!canSend}
           aria-label="Enviar"
-          className={`flex h-[40px] w-[40px] shrink-0 cursor-pointer items-center justify-center transition-colors disabled:cursor-not-allowed ${
+          className={`flex h-[40px] w-[40px] shrink-0 cursor-pointer items-center justify-center rounded-sm transition-colors disabled:cursor-not-allowed ${
             canSend
               ? "bg-primary text-on-primary active:bg-primary-active"
               : "border border-hairline text-muted"

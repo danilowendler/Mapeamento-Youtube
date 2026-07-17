@@ -20,7 +20,7 @@ export function ResetRequestForm() {
 
   return (
     <form action={formAction} className="flex flex-col gap-sm">
-      <h1 className="text-display-md text-ink">Recuperar senha</h1>
+      <h1 className="font-display text-display-md text-ink">Recuperar senha</h1>
       <p className="text-body-md text-body">
         Informe seu e-mail e enviaremos um link para redefinir a senha.
       </p>
