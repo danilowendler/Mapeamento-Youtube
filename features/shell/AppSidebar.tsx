@@ -5,10 +5,14 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   ChartColumn,
+  ChevronRight,
   CircleHelp,
   CircleUser,
+  FileText,
   Folder,
+  Lock,
   LogOut,
+  Mail,
   Palette,
   PanelLeft,
   PenLine,
@@ -65,6 +69,7 @@ export function AppSidebar({
     () => false,
   );
   const [menuOpen, setMenuOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Clique fora / Esc fecham o popover
@@ -217,15 +222,58 @@ export function AppSidebar({
               Configurações
             </Link>
             <hr className="border-hairline" />
-            <a
+            <button
+              type="button"
               role="menuitem"
-              href={`mailto:${BRAND.contactEmail}`}
-              onClick={() => setMenuOpen(false)}
+              onClick={() => setHelpOpen((open) => !open)}
+              aria-expanded={helpOpen}
               className={menuItemClass}
             >
               <CircleHelp size={18} strokeWidth={1.6} />
               Ajuda
-            </a>
+              <ChevronRight
+                size={14}
+                strokeWidth={1.6}
+                className={`ml-auto transition-transform duration-200 ${
+                  helpOpen ? "rotate-90" : ""
+                }`}
+              />
+            </button>
+            {helpOpen && (
+              <div className="animate-bubble-in flex flex-col gap-xxxs">
+                <Link
+                  role="menuitem"
+                  href="/termos"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setMenuOpen(false)}
+                  className={`${menuItemClass} pl-md`}
+                >
+                  <FileText size={16} strokeWidth={1.6} />
+                  Termos de uso
+                </Link>
+                <Link
+                  role="menuitem"
+                  href="/privacidade"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setMenuOpen(false)}
+                  className={`${menuItemClass} pl-md`}
+                >
+                  <Lock size={16} strokeWidth={1.6} />
+                  Política de privacidade
+                </Link>
+                <a
+                  role="menuitem"
+                  href={`mailto:${BRAND.contactEmail}`}
+                  onClick={() => setMenuOpen(false)}
+                  className={`${menuItemClass} pl-md`}
+                >
+                  <Mail size={16} strokeWidth={1.6} />
+                  Falar com a gente
+                </a>
+              </div>
+            )}
             <form action={signOut}>
               <button type="submit" role="menuitem" className={menuItemClass}>
                 <LogOut size={18} strokeWidth={1.6} />
@@ -237,7 +285,10 @@ export function AppSidebar({
 
         <button
           type="button"
-          onClick={() => setMenuOpen((open) => !open)}
+          onClick={() => {
+            setHelpOpen(false);
+            setMenuOpen((open) => !open);
+          }}
           aria-haspopup="menu"
           aria-expanded={menuOpen}
           title={collapsed ? `${name} · plano ${planName}` : undefined}

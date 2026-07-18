@@ -63,7 +63,7 @@ export function ChatSearchInput({
           disabled={pending}
           placeholder={placeholder}
           aria-label="O que você quer mapear? Tema, palavra-chave, @canal ou nicho"
-          className="h-[44px] w-full min-w-0 flex-1 bg-transparent px-xxs text-body-md text-ink placeholder:text-muted focus-visible:outline-none disabled:opacity-50"
+          className="h-[44px] w-full min-w-0 flex-1 bg-transparent px-xxs text-body-md text-ink placeholder:text-muted focus-visible:shadow-none focus-visible:outline-none disabled:opacity-50"
         />
         <button
           type="button"

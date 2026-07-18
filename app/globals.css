@@ -143,6 +143,21 @@ body {
   outline-offset: 2px;
 }
 
+/* Foco silencioso em campos de texto (decisão do time, 17/07/2026):
+   em inputs o anel amarelo dispara já no clique e rouba a cena.
+   Campos trocam para borda + halo sutil que segue o tema (via ink).
+   O amarelo permanece em botões/links na navegação por teclado. */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  border-color: var(--color-muted);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-ink) 6%, transparent);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
 /* Barra de progresso indeterminada (varredura) */
 @keyframes progress-sweep {
   from {
