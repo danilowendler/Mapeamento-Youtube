@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getPlanLimits } from "@/services/planService";
-import { MIN_OPPORTUNITY_SCORE } from "@/services/outliers";
+import { MIN_DISPLAY_SCORE } from "@/services/outliers";
 import { BRAND } from "@/lib/brand";
 import { buildCsv } from "@/utils/csv";
 
@@ -66,7 +66,7 @@ export async function GET(
         "youtube_id, channel_id, title, is_short, duration_seconds, published_at, view_count, score, baseline_views",
       )
       .in("channel_id", channelIds)
-      .gte("score", MIN_OPPORTUNITY_SCORE)
+      .gte("score", MIN_DISPLAY_SCORE)
       .order("score", { ascending: false })
       .limit(500),
     db

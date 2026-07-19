@@ -11,7 +11,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import {
   MIN_BUCKET_SAMPLE,
-  MIN_OPPORTUNITY_SCORE,
+  MIN_DISPLAY_SCORE,
 } from "@/services/outliers";
 import { getPlanLimits } from "@/services/planService";
 import { findRelatedChannels } from "@/services/relatedService";
@@ -72,7 +72,7 @@ export default async function ResultadosPage({
           "youtube_id, channel_id, title, thumbnail_url, is_short, duration_seconds, published_at, view_count, score, baseline_views, age_bucket",
         )
         .in("channel_id", readyChannelIds)
-        .gte("score", MIN_OPPORTUNITY_SCORE)
+        .gte("score", MIN_DISPLAY_SCORE)
         .order("score", { ascending: false })
         .limit(200),
       supabase
@@ -239,8 +239,9 @@ export default async function ResultadosPage({
       ) : cards.length === 0 && search.status !== "running" &&
         search.status !== "queued" ? (
         <p className="rounded-md border border-dashed border-hairline p-sm text-body-md text-body">
-          Nenhum vídeo com {MIN_OPPORTUNITY_SCORE}× ou mais acima da mediana —
-          os vídeos destes canais performam de forma uniforme.
+          Nenhum vídeo com pelo menos{" "}
+          {MIN_DISPLAY_SCORE.toLocaleString("pt-BR")}× a mediana do próprio
+          canal — os vídeos destes canais performam de forma uniforme.
         </p>
       ) : (
         <ResultsView

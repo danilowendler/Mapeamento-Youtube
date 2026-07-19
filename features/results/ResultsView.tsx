@@ -41,7 +41,8 @@ export function ResultsView({
   const params = useSearchParams();
 
   const format = params.get("f") === "short" ? "short" : "long";
-  const minScore = Number(params.get("s") ?? 3);
+  // URL limpa = piso de exibição 1.5× (Pré-M9 T1)
+  const minScore = Number(params.get("s") ?? 1.5);
   const maxAgeMonths = Number(params.get("i") ?? 0); // 0 = todas
   const subsRange = params.get("t") ?? "todos";
   const sort = (params.get("o") ?? "score") as SortKey;
@@ -131,9 +132,10 @@ export function ResultsView({
             className={selectClass}
             value={String(minScore)}
             onChange={(e) =>
-              setParam("s", e.target.value === "3" ? null : e.target.value)
+              setParam("s", e.target.value === "1.5" ? null : e.target.value)
             }
           >
+            <option value="1.5">≥ 1,5×</option>
             <option value="3">≥ 3×</option>
             <option value="10">≥ 10×</option>
             <option value="30">≥ 30×</option>
