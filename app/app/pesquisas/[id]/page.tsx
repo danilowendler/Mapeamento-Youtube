@@ -241,6 +241,17 @@ export default async function ResultadosPage({
 
   const failedInputs = (search.failed_inputs ?? []) as string[];
 
+  // Países declarados pelos canais da pesquisa (T3b): a lista vem de
+  // TODOS os canais analisados, não dos cards visíveis — um canal sem
+  // oportunidades ainda conta para o filtro de país
+  const searchCountries = [
+    ...new Set(
+      [...channelById.values()]
+        .map((channel) => channel.country)
+        .filter((country): country is string => country !== null),
+    ),
+  ];
+
   // Favoritos do usuário entre os vídeos exibidos (RLS filtra por dono)
   const shownVideoIds = [
     ...new Set([
@@ -319,6 +330,7 @@ export default async function ResultadosPage({
         <ResultsView
           cards={cards}
           trending={trendingCards}
+          countries={searchCountries}
           oldestRefreshedAt={oldestRefreshedAt}
           favoritedIds={favoritedIds}
           savedChannelIds={[...savedChannelIds]}
