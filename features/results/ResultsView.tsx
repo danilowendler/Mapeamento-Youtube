@@ -19,6 +19,23 @@ const SUBS_RANGES: Record<string, (subs: number | null) => boolean> = {
   "1m-mais": (s) => s !== null && s >= 1_000_000,
 };
 
+/** Balde do filtro de país para canais sem country autodeclarado. */
+const COUNTRY_UNKNOWN = "sem";
+
+const regionNamesPtBr = new Intl.DisplayNames(["pt-BR"], {
+  type: "region",
+  fallback: "code",
+});
+
+/** Nome pt-BR do país (Intl.DisplayNames); código cru se inválido. */
+function countryNameOf(code: string): string {
+  try {
+    return regionNamesPtBr.of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
 /**
  * Resultados com filtros e ordenação client-side, estado na URL
  * (compartilhável — doc 6 §6.4). Formatos nunca se misturam nas abas
@@ -59,6 +76,7 @@ export function ResultsView({
   const minScore = Number(params.get("s") ?? 1.5);
   const maxAgeMonths = Number(params.get("i") ?? 0); // 0 = todas
   const subsRange = params.get("t") ?? "todos";
+  const country = params.get("p") ?? "todos"; // ISO, "sem" ou "todos"
   const sortParam = (params.get("o") ?? "score") as SortKey;
   // Trending não tem score: o default (e qualquer o=score) vira views
   const sort: SortKey =
@@ -78,6 +96,30 @@ export function ResultsView({
   // compiler; o filtro de idade não precisa de relógio vivo)
   const [now] = useState(() => Date.now());
 
+  // Países PRESENTES na pesquisa (todas as abas), nomeados em pt-BR —
+  // country é autodeclarado no YouTube e frequentemente vazio (T3)
+  const countryOptions = useMemo(() => {
+    const codes = new Set<string>();
+    for (const card of cards) {
+      if (card.channelCountry) codes.add(card.channelCountry);
+    }
+    for (const card of trending) {
+      if (card.channelCountry) codes.add(card.channelCountry);
+    }
+    return [...codes]
+      .map((code) => ({ code, name: countryNameOf(code) }))
+      .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  }, [cards, trending]);
+
+  const matchesCountry = useCallback(
+    (channelCountry: string | null) => {
+      if (country === "todos") return true;
+      if (country === COUNTRY_UNKNOWN) return channelCountry === null;
+      return channelCountry === country;
+    },
+    [country],
+  );
+
   const { longs, shorts, visible } = useMemo(() => {
     const longs = cards.filter((card) => !card.isShort);
     const shorts = cards.filter((card) => card.isShort);
@@ -92,6 +134,7 @@ export function ResultsView({
           (now - new Date(card.publishedAt).getTime()) / (30 * DAY_MS);
         if (ageMonths > maxAgeMonths) return false;
       }
+      if (!matchesCountry(card.channelCountry)) return false;
       const inRange = SUBS_RANGES[subsRange] ?? SUBS_RANGES.todos;
       return inRange(card.channelSubscribers);
     });
@@ -113,13 +156,25 @@ export function ResultsView({
     });
 
     return { longs, shorts, visible: filtered };
-  }, [cards, format, isTrending, minScore, maxAgeMonths, subsRange, sort, now]);
+  }, [
+    cards,
+    format,
+    isTrending,
+    minScore,
+    maxAgeMonths,
+    subsRange,
+    matchesCountry,
+    sort,
+    now,
+  ]);
 
   const trendingVisible = useMemo(() => {
     if (!isTrending) return [];
     const inRange = SUBS_RANGES[subsRange] ?? SUBS_RANGES.todos;
-    const filtered = trending.filter((card) =>
-      inRange(card.channelSubscribers),
+    const filtered = trending.filter(
+      (card) =>
+        inRange(card.channelSubscribers) &&
+        matchesCountry(card.channelCountry),
     );
     filtered.sort((a, b) => {
       switch (sort) {
@@ -135,7 +190,7 @@ export function ResultsView({
       }
     });
     return filtered;
-  }, [isTrending, trending, subsRange, sort]);
+  }, [isTrending, trending, subsRange, matchesCountry, sort]);
 
   const selectClass =
     "h-[36px] cursor-pointer rounded-sm border border-hairline bg-canvas px-xxs text-body-sm text-ink";
@@ -216,6 +271,24 @@ export function ResultsView({
             <option value="1m-mais">1 mi+</option>
           </select>
         </label>
+        <label className="flex items-center gap-xxxs text-body-sm text-body">
+          País
+          <select
+            className={selectClass}
+            value={country}
+            onChange={(e) =>
+              setParam("p", e.target.value === "todos" ? null : e.target.value)
+            }
+          >
+            <option value="todos">Todos</option>
+            {countryOptions.map(({ code, name }) => (
+              <option key={code} value={code}>
+                {name}
+              </option>
+            ))}
+            <option value={COUNTRY_UNKNOWN}>Não informado</option>
+          </select>
+        </label>
         <label className="ml-auto flex items-center gap-xxxs text-body-sm text-body">
           Ordenar
           <select
@@ -238,6 +311,13 @@ export function ResultsView({
           </select>
         </label>
       </div>
+
+      {country !== "todos" && (
+        <p className="text-caption text-muted">
+          O país é autodeclarado pelo canal no YouTube e muitos canais não
+          preenchem — esses ficam em “Não informado”, não somem da pesquisa.
+        </p>
+      )}
 
       {isTrending ? (
         trendingVisible.length === 0 ? (
