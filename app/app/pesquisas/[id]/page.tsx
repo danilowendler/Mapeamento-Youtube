@@ -15,6 +15,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   MIN_BUCKET_SAMPLE,
   MIN_DISPLAY_SCORE,
+  partialScore,
 } from "@/services/outliers";
 import { trendingSinceIso } from "@/services/freshness";
 import { getPlanLimits } from "@/services/planService";
@@ -96,7 +97,7 @@ export default async function ResultadosPage({
           .in("youtube_id", allChannelIds),
         supabase
           .from("channel_baselines")
-          .select("channel_id, format, age_bucket, sample_size")
+          .select("channel_id, format, age_bucket, median_views, sample_size")
           .in("channel_id", readyChannelIds),
         supabase
           .from("videos")
@@ -150,9 +151,22 @@ export default async function ResultadosPage({
       };
     });
 
+    // Mediana geral do formato (bucket "all") por canal — base do score
+    // parcial da Trending (piso honesto: views só crescem)
+    const medianByFormat = new Map(
+      (baselinesRes.data ?? [])
+        .filter((b) => b.age_bucket === "all")
+        .map((b) => [`${b.channel_id}|${b.format}`, b.median_views]),
+    );
+
     trendingCards = (trendingRes.data ?? []).map((video) => {
       const channel = channelById.get(video.channel_id);
+      const format = video.is_short ? "short" : "long";
       return {
+        partialScore: partialScore(
+          video.view_count,
+          medianByFormat.get(`${video.channel_id}|${format}`) ?? null,
+        ),
         videoId: video.youtube_id,
         title: video.title,
         thumbnailUrl: video.thumbnail_url,

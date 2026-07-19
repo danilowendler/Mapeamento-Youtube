@@ -78,6 +78,26 @@ export function median(values: number[]): number {
     : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
+/**
+ * Score PARCIAL de vídeo jovem (< 14 dias, aba Trending — Pré-M9 T2b).
+ * Views só crescem e a mediana do canal é fixa, então views ÷ mediana
+ * é um PISO do score futuro — honesto de exibir. Retorna null abaixo
+ * de 1×: aí o número não informa nada (cedo demais para saber se o
+ * vídeo é fraco — regra dos 14 dias, doc 3 §3.6).
+ */
+export function partialScore(
+  viewCount: number | null,
+  medianViews: number | null,
+): number | null {
+  if (viewCount === null || medianViews === null) return null;
+  if (!Number.isFinite(viewCount) || !Number.isFinite(medianViews)) {
+    return null;
+  }
+  const baseline = Math.max(medianViews, 1); // nunca dividir por zero
+  const score = Math.round((viewCount / baseline) * 100) / 100;
+  return score >= 1 ? score : null;
+}
+
 export type ChannelAnalysis = {
   baselines: Baseline[];
   videos: ScoredVideo[];

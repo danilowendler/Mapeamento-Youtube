@@ -3,6 +3,7 @@ import {
   ageBucketOf,
   analyzeChannel,
   median,
+  partialScore,
   type AnalyzableVideo,
 } from "./outliers";
 
@@ -23,6 +24,25 @@ function video(
     viewCount: views,
   };
 }
+
+describe("partialScore (piso de vídeo jovem — Trending)", () => {
+  it("views acima da mediana: retorna o multiplicador", () => {
+    expect(partialScore(2300, 1000)).toBe(2.3);
+  });
+  it("exatamente na mediana: 1× ainda é piso válido", () => {
+    expect(partialScore(1000, 1000)).toBe(1);
+  });
+  it("abaixo da mediana: null (cedo demais para julgar)", () => {
+    expect(partialScore(800, 1000)).toBeNull();
+  });
+  it("mediana zero: baseline mínimo 1, nunca divide por zero", () => {
+    expect(partialScore(50, 0)).toBe(50);
+  });
+  it("entradas nulas: null", () => {
+    expect(partialScore(null, 1000)).toBeNull();
+    expect(partialScore(500, null)).toBeNull();
+  });
+});
 
 describe("median", () => {
   it("ímpar: valor central", () => {
