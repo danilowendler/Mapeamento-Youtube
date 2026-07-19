@@ -46,6 +46,7 @@ function countryNameOf(code: string): string {
 export function ResultsView({
   cards,
   trending = [],
+  countries = [],
   oldestRefreshedAt = null,
   favoritedIds = [],
   savedChannelIds = [],
@@ -53,6 +54,8 @@ export function ResultsView({
 }: {
   cards: OpportunityCard[];
   trending?: TrendingCard[];
+  /** Países declarados pelos canais analisados da pesquisa (ISO). */
+  countries?: string[];
   oldestRefreshedAt?: string | null;
   favoritedIds?: string[];
   savedChannelIds?: string[];
@@ -96,20 +99,16 @@ export function ResultsView({
   // compiler; o filtro de idade não precisa de relógio vivo)
   const [now] = useState(() => Date.now());
 
-  // Países PRESENTES na pesquisa (todas as abas), nomeados em pt-BR —
-  // country é autodeclarado no YouTube e frequentemente vazio (T3)
-  const countryOptions = useMemo(() => {
-    const codes = new Set<string>();
-    for (const card of cards) {
-      if (card.channelCountry) codes.add(card.channelCountry);
-    }
-    for (const card of trending) {
-      if (card.channelCountry) codes.add(card.channelCountry);
-    }
-    return [...codes]
-      .map((code) => ({ code, name: countryNameOf(code) }))
-      .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
-  }, [cards, trending]);
+  // Países dos CANAIS ANALISADOS da pesquisa (T3b — não dos cards
+  // visíveis: canal sem oportunidade ainda conta), nomeados em pt-BR.
+  // country é autodeclarado no YouTube e frequentemente vazio (T3).
+  const countryOptions = useMemo(
+    () =>
+      [...new Set(countries)]
+        .map((code) => ({ code, name: countryNameOf(code) }))
+        .sort((a, b) => a.name.localeCompare(b.name, "pt-BR")),
+    [countries],
+  );
 
   const matchesCountry = useCallback(
     (channelCountry: string | null) => {
