@@ -3,6 +3,16 @@
 export const FRESH_MAX_DAYS = 7;
 export const STALE_MAX_DAYS = 30;
 
+/** Janela da aba Trending (Pré-M9 T2): vídeos dos últimos 7 dias. */
+export const TRENDING_WINDOW_DAYS = 7;
+
+/** Corte ISO da janela Trending, para a query no corpus. */
+export function trendingSinceIso(now: Date = new Date()): string {
+  return new Date(
+    now.getTime() - TRENDING_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+  ).toISOString();
+}
+
 export type FreshnessDecision =
   /** ≤ 7 dias: cache hit, servir direto, custo zero. */
   | "fresh"
