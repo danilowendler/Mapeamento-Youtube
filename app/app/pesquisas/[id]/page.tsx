@@ -71,6 +71,7 @@ export default async function ResultadosPage({
       youtube_id: string;
       title: string;
       subscriber_count: number | null;
+      country: string | null;
       refreshed_at: string | null;
     }
   >();
@@ -93,7 +94,7 @@ export default async function ResultadosPage({
           .limit(200),
         supabase
           .from("channels")
-          .select("youtube_id, title, subscriber_count, refreshed_at")
+          .select("youtube_id, title, subscriber_count, country, refreshed_at")
           .in("youtube_id", allChannelIds),
         supabase
           .from("channel_baselines")
@@ -148,6 +149,7 @@ export default async function ResultadosPage({
         channelId: video.channel_id,
         channelTitle: channel?.title ?? "—",
         channelSubscribers: channel?.subscriber_count ?? null,
+        channelCountry: channel?.country ?? null,
       };
     });
 
@@ -177,6 +179,7 @@ export default async function ResultadosPage({
         channelId: video.channel_id,
         channelTitle: channel?.title ?? "—",
         channelSubscribers: channel?.subscriber_count ?? null,
+        channelCountry: channel?.country ?? null,
       };
     });
 

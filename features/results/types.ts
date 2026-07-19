@@ -13,6 +13,8 @@ export type OpportunityCard = {
   channelId: string;
   channelTitle: string;
   channelSubscribers: number | null;
+  /** ISO 3166-1 autodeclarado no YouTube — frequentemente null. */
+  channelCountry: string | null;
 };
 
 /**
@@ -36,6 +38,8 @@ export type TrendingCard = {
   channelId: string;
   channelTitle: string;
   channelSubscribers: number | null;
+  /** ISO 3166-1 autodeclarado no YouTube — frequentemente null. */
+  channelCountry: string | null;
 };
 
 export type SearchSummary = {
