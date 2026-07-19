@@ -13,8 +13,18 @@
 export const MIN_BASELINE_AGE_DAYS = 14;
 /** Amostra mínima para o baseline do bucket ser confiável. */
 export const MIN_BUCKET_SAMPLE = 10;
-/** Score mínimo para um vídeo contar como oportunidade (doc 3 §3.6). */
+/**
+ * Score mínimo para um vídeo contar como oportunidade (doc 3 §3.6).
+ * É a régua das métricas materializadas do Dashboard (top_score,
+ * contagens) — mudar exige re-backfill; não usar para exibição.
+ */
 export const MIN_OPPORTUNITY_SCORE = 3;
+/**
+ * Piso de EXIBIÇÃO nos resultados e no export (Pré-M9 T1): mostra a
+ * faixa 1.5–3× como sinal fraco sem rebaixar a régua de oportunidade
+ * acima. Read-time apenas — nenhuma métrica materializada usa isto.
+ */
+export const MIN_DISPLAY_SCORE = 1.5;
 /** Limiares das faixas de score do design system (3× · 10× · 30×+). */
 export const SCORE_BAND_MID = 10;
 export const SCORE_BAND_HIGH = 30;

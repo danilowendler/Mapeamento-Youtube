@@ -3,7 +3,8 @@ import { formatScoreMultiplier } from "@/utils/format";
 /**
  * Badge de score (doc 6 §6.4/6.6): brilho crescente por faixa,
  * reservando o vermelho `primary` só para 30×+ — mantém o acento
- * escasso do design system.
+ * escasso do design system. A faixa 1.5–3× é sinal fraco (Pré-M9 T1):
+ * só contorno, mais apagada que a 3–10×.
  */
 export function ScoreBadge({ score }: { score: number }) {
   const tier =
@@ -11,7 +12,9 @@ export function ScoreBadge({ score }: { score: number }) {
       ? "bg-primary text-on-primary"
       : score >= 10
         ? "bg-ink text-canvas"
-        : "bg-canvas-elevated text-ink";
+        : score >= 3
+          ? "bg-canvas-elevated text-ink"
+          : "border border-hairline text-body";
 
   return (
     <span
