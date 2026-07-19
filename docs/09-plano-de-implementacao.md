@@ -187,6 +187,26 @@ verde, migrations aplicadas em dev+prod quando houver.
 em produção. M9 restante (security-audit, Playwright, go-live Stripe)
 fecha DEPOIS, cobrindo as tabelas novas.
 
+## Pré-M9 · Ajustes de mercado T1–T3 (19/07/2026)
+
+> Feedback de potencial cliente (via fundador). Sem migrations — tudo
+> read-time; a régua materializada das métricas (3×) fica intacta.
+
+| Lote | Conteúdo | Status |
+|---|---|---|
+| T1 | Piso de score 1.5×: `MIN_DISPLAY_SCORE = 1.5` em services/outliers (métricas seguem `MIN_OPPORTUNITY_SCORE = 3`); query de resultados e export ≥ 1.5; filtro ganha "≥ 1,5×" como DEFAULT; ScoreBadge com tier apagado 1.5–3× | |
+| T2 | Aba "Trending" nos resultados: query no corpus (vídeos dos canais prontos, `published_at` ≤ 7 dias, ordem `view_count`, ~12, incluindo sem score, zero cota); selo didático "sem score ainda" no lugar do badge; rodapé "números da última análise"; filtros de score ocultos na aba | |
+| T3 | Filtro "País" nos resultados: `channels.country` nos cards; select com países presentes na pesquisa (`Intl.DisplayNames` pt-BR) + balde "Não informado" (country é autodeclarado/esparso); estado na URL; vale também para a Trending | |
+
+Fora de escopo decidido: seletor de região/idioma na BUSCA (mexe em
+cache de keywords 72h + 100 un/busca fria + posicionamento Brasil-first)
+e rebaixamento global da régua de oportunidade para 1.5× (exigiria
+re-backfill das contagens materializadas — só se o mercado consolidar).
+
+✅ Conclusão (por lote): suite verde, merge --no-ff, avaliação do
+fundador em produção. Depois: M9 final (security-audit + Playwright +
+go-live Stripe).
+
 ## M11 · Pós-lançamento imediato (contínuo)
 Não é milestone de construção — é regime de operação: acompanhar métricas ([doc 1, §1.7](01-visao-de-produto.md) e [doc 7, §7.5](07-monetizacao.md)), triagem de feedback, ajuste de pricing com dados reais, pedido de aumento de cota ao Google quando a fila de prioridade 1–2 represar, e priorização do roadmap pós-MVP (Pix, anual, páginas SEO do corpus, IA).
 
