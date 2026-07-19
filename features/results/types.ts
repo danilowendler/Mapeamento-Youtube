@@ -21,6 +21,11 @@ export type OpportunityCard = {
  * a régua da mediana exige 14 dias de vida (doc 3 §3.6).
  */
 export type TrendingCard = {
+  /**
+   * Piso do score futuro (views atuais ÷ mediana do formato) — só
+   * preenchido quando ≥ 1×; null = jovem demais para qualquer número.
+   */
+  partialScore: number | null;
   videoId: string;
   title: string;
   thumbnailUrl: string | null;

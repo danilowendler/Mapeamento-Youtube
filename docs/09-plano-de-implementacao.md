@@ -195,7 +195,7 @@ fecha DEPOIS, cobrindo as tabelas novas.
 | Lote | Conteúdo | Status |
 |---|---|---|
 | T1 | Piso de score 1.5×: `MIN_DISPLAY_SCORE = 1.5` em services/outliers (métricas seguem `MIN_OPPORTUNITY_SCORE = 3`); query de resultados e export ≥ 1.5; filtro ganha "≥ 1,5×" como DEFAULT; ScoreBadge com tier apagado 1.5–3× | ✅ 19/07/2026 |
-| T2 | Aba "Trending" nos resultados: query no corpus (vídeos dos canais prontos, `published_at` ≤ 7 dias, ordem `view_count`, ~12, incluindo sem score, zero cota); selo didático "sem score ainda" no lugar do badge; rodapé "números da última análise"; filtros de score ocultos na aba | ✅ 19/07/2026 |
+| T2 | Aba "Trending" nos resultados: query no corpus (vídeos dos canais prontos, `published_at` ≤ 7 dias, ordem `view_count`, ~12, incluindo sem score, zero cota); selo didático "sem score ainda" no lugar do badge; rodapé "números da última análise"; filtros de score ocultos na aba. T2b: score PARCIAL (piso honesto — views ÷ mediana do formato, `partialScore` no motor) exibido quando o vídeo jovem já superou a mediana | ✅ 19/07/2026 |
 | T3 | Filtro "País" nos resultados: `channels.country` nos cards; select com países presentes na pesquisa (`Intl.DisplayNames` pt-BR) + balde "Não informado" (country é autodeclarado/esparso); estado na URL; vale também para a Trending | |
 
 Fora de escopo decidido: seletor de região/idioma na BUSCA (mexe em

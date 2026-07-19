@@ -4,6 +4,7 @@ import {
   formatCompactCount,
   formatDuration,
   formatRelativeDate,
+  formatScoreMultiplier,
 } from "@/utils/format";
 import type { TrendingCard } from "./types";
 
@@ -12,6 +13,9 @@ import type { TrendingCard } from "./types";
  * do score, com selo didático — vídeo novo ainda não tem score justo
  * porque a régua da mediana exige 14 dias (doc 3 §3.6). O formato vira
  * etiqueta no próprio card, já que a aba mistura longos e shorts.
+ * Quando o vídeo JÁ superou a mediana, mostra o score parcial (piso
+ * honesto: views só crescem — T2b); estilo de contorno, nunca os
+ * preenchimentos dos tiers de score fechado.
  */
 export function TrendingVideoCard({
   card,
@@ -57,9 +61,15 @@ export function TrendingVideoCard({
               initialVideoSaved={favorited}
               initialChannelSaved={channelSaved}
             />
-            <span className="inline-flex items-center border border-hairline px-xxs py-xxxs text-caption-upper uppercase text-muted-soft">
-              sem score ainda
-            </span>
+            {card.partialScore !== null ? (
+              <span className="inline-flex items-center gap-xxxs border border-ink px-xxs py-xxxs text-caption-upper uppercase tabular-nums text-ink">
+                já {formatScoreMultiplier(card.partialScore)} ↗
+              </span>
+            ) : (
+              <span className="inline-flex items-center border border-hairline px-xxs py-xxxs text-caption-upper uppercase text-muted-soft">
+                sem score ainda
+              </span>
+            )}
           </span>
         </div>
         <p className="text-title-sm tabular-nums text-ink">
@@ -78,8 +88,9 @@ export function TrendingVideoCard({
             ` · ${formatCompactCount(card.channelSubscribers)} inscritos`}
         </p>
         <p className="text-caption text-muted">
-          Novo demais para um score justo — a comparação com a mediana do
-          canal só vale após 14 dias de vida.
+          {card.partialScore !== null
+            ? `Score parcial: já fez ${formatScoreMultiplier(card.partialScore)} a mediana do canal e as views ainda crescem — o score fecha aos 14 dias e daqui só sobe.`
+            : "Novo demais para um score justo — a comparação com a mediana do canal só vale após 14 dias de vida."}
         </p>
       </div>
     </a>
