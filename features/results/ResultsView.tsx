@@ -2,8 +2,10 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
+import { formatRelativeDate } from "@/utils/format";
+import { TrendingVideoCard } from "./TrendingVideoCard";
 import { VideoCard } from "./VideoCard";
-import type { OpportunityCard } from "./types";
+import type { OpportunityCard, TrendingCard } from "./types";
 
 type SortKey = "score" | "views" | "date" | "subs";
 
@@ -19,15 +21,22 @@ const SUBS_RANGES: Record<string, (subs: number | null) => boolean> = {
 
 /**
  * Resultados com filtros e ordenação client-side, estado na URL
- * (compartilhável — doc 6 §6.4). Formatos nunca se misturam.
+ * (compartilhável — doc 6 §6.4). Formatos nunca se misturam nas abas
+ * de score; a aba Trending (Pré-M9 T2) mistura de propósito — não há
+ * ranking por score ali, só recência × views — e por isso o formato
+ * vira etiqueta no card e os filtros de score/idade somem.
  */
 export function ResultsView({
   cards,
+  trending = [],
+  oldestRefreshedAt = null,
   favoritedIds = [],
   savedChannelIds = [],
   searchId,
 }: {
   cards: OpportunityCard[];
+  trending?: TrendingCard[];
+  oldestRefreshedAt?: string | null;
   favoritedIds?: string[];
   savedChannelIds?: string[];
   searchId?: string;
@@ -40,12 +49,20 @@ export function ResultsView({
   const router = useRouter();
   const params = useSearchParams();
 
-  const format = params.get("f") === "short" ? "short" : "long";
+  const formatParam = params.get("f");
+  const format =
+    formatParam === "short" || formatParam === "trending"
+      ? formatParam
+      : "long";
+  const isTrending = format === "trending";
   // URL limpa = piso de exibição 1.5× (Pré-M9 T1)
   const minScore = Number(params.get("s") ?? 1.5);
   const maxAgeMonths = Number(params.get("i") ?? 0); // 0 = todas
   const subsRange = params.get("t") ?? "todos";
-  const sort = (params.get("o") ?? "score") as SortKey;
+  const sortParam = (params.get("o") ?? "score") as SortKey;
+  // Trending não tem score: o default (e qualquer o=score) vira views
+  const sort: SortKey =
+    isTrending && sortParam === "score" ? "views" : sortParam;
 
   const setParam = useCallback(
     (key: string, value: string | null) => {
@@ -64,6 +81,7 @@ export function ResultsView({
   const { longs, shorts, visible } = useMemo(() => {
     const longs = cards.filter((card) => !card.isShort);
     const shorts = cards.filter((card) => card.isShort);
+    if (isTrending) return { longs, shorts, visible: [] };
     const pool = format === "long" ? longs : shorts;
 
     const filtered = pool.filter((card) => {
@@ -95,7 +113,29 @@ export function ResultsView({
     });
 
     return { longs, shorts, visible: filtered };
-  }, [cards, format, minScore, maxAgeMonths, subsRange, sort, now]);
+  }, [cards, format, isTrending, minScore, maxAgeMonths, subsRange, sort, now]);
+
+  const trendingVisible = useMemo(() => {
+    if (!isTrending) return [];
+    const inRange = SUBS_RANGES[subsRange] ?? SUBS_RANGES.todos;
+    const filtered = trending.filter((card) =>
+      inRange(card.channelSubscribers),
+    );
+    filtered.sort((a, b) => {
+      switch (sort) {
+        case "date":
+          return (
+            new Date(b.publishedAt ?? 0).getTime() -
+            new Date(a.publishedAt ?? 0).getTime()
+          );
+        case "subs":
+          return (b.channelSubscribers ?? 0) - (a.channelSubscribers ?? 0);
+        default:
+          return (b.viewCount ?? 0) - (a.viewCount ?? 0);
+      }
+    });
+    return filtered;
+  }, [isTrending, trending, subsRange, sort]);
 
   const selectClass =
     "h-[36px] cursor-pointer rounded-sm border border-hairline bg-canvas px-xxs text-body-sm text-ink";
@@ -107,6 +147,7 @@ export function ResultsView({
           [
             { key: "long", label: `Vídeos longos (${longs.length})` },
             { key: "short", label: `Shorts (${shorts.length})` },
+            { key: "trending", label: `Trending (${trending.length})` },
           ] as const
         ).map(({ key, label }) => (
           <button
@@ -126,35 +167,39 @@ export function ResultsView({
       </div>
 
       <div className="flex flex-wrap items-center gap-xxs">
-        <label className="flex items-center gap-xxxs text-body-sm text-body">
-          Score
-          <select
-            className={selectClass}
-            value={String(minScore)}
-            onChange={(e) =>
-              setParam("s", e.target.value === "1.5" ? null : e.target.value)
-            }
-          >
-            <option value="1.5">≥ 1,5×</option>
-            <option value="3">≥ 3×</option>
-            <option value="10">≥ 10×</option>
-            <option value="30">≥ 30×</option>
-          </select>
-        </label>
-        <label className="flex items-center gap-xxxs text-body-sm text-body">
-          Idade
-          <select
-            className={selectClass}
-            value={String(maxAgeMonths)}
-            onChange={(e) =>
-              setParam("i", e.target.value === "0" ? null : e.target.value)
-            }
-          >
-            <option value="0">Todas</option>
-            <option value="3">Até 3 meses</option>
-            <option value="12">Até 1 ano</option>
-          </select>
-        </label>
+        {!isTrending && (
+          <>
+            <label className="flex items-center gap-xxxs text-body-sm text-body">
+              Score
+              <select
+                className={selectClass}
+                value={String(minScore)}
+                onChange={(e) =>
+                  setParam("s", e.target.value === "1.5" ? null : e.target.value)
+                }
+              >
+                <option value="1.5">≥ 1,5×</option>
+                <option value="3">≥ 3×</option>
+                <option value="10">≥ 10×</option>
+                <option value="30">≥ 30×</option>
+              </select>
+            </label>
+            <label className="flex items-center gap-xxxs text-body-sm text-body">
+              Idade
+              <select
+                className={selectClass}
+                value={String(maxAgeMonths)}
+                onChange={(e) =>
+                  setParam("i", e.target.value === "0" ? null : e.target.value)
+                }
+              >
+                <option value="0">Todas</option>
+                <option value="3">Até 3 meses</option>
+                <option value="12">Até 1 ano</option>
+              </select>
+            </label>
+          </>
+        )}
         <label className="flex items-center gap-xxxs text-body-sm text-body">
           Canal
           <select
@@ -180,15 +225,43 @@ export function ResultsView({
               setParam("o", e.target.value === "score" ? null : e.target.value)
             }
           >
-            <option value="score">Score</option>
-            <option value="views">Views</option>
+            {isTrending ? (
+              <option value="views">Views</option>
+            ) : (
+              <>
+                <option value="score">Score</option>
+                <option value="views">Views</option>
+              </>
+            )}
             <option value="date">Mais recentes</option>
             <option value="subs">Tamanho do canal</option>
           </select>
         </label>
       </div>
 
-      {visible.length === 0 ? (
+      {isTrending ? (
+        trendingVisible.length === 0 ? (
+          <p className="rounded-md border border-dashed border-hairline p-sm text-body-md text-body">
+            Nenhum vídeo publicado nos últimos 7 dias pelos canais desta
+            pesquisa{subsRange !== "todos" ? " com o filtro de canal atual" : ""}
+            . A Trending mostra o que está saindo agora, antes mesmo de ter
+            score.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-xs">
+            {trendingVisible.map((card) => (
+              <li key={card.videoId}>
+                <TrendingVideoCard
+                  card={card}
+                  favorited={favoritedSet.has(card.videoId)}
+                  channelSaved={savedChannelSet.has(card.channelId)}
+                  searchId={searchId}
+                />
+              </li>
+            ))}
+          </ul>
+        )
+      ) : visible.length === 0 ? (
         <p className="rounded-md border border-dashed border-hairline p-sm text-body-md text-body">
           Nenhum vídeo neste formato com os filtros atuais — ajuste o score
           mínimo ou os demais filtros.
@@ -206,6 +279,16 @@ export function ResultsView({
             </li>
           ))}
         </ul>
+      )}
+
+      {isTrending && (
+        <p className="text-caption text-muted">
+          Números da última análise
+          {oldestRefreshedAt &&
+            ` (${formatRelativeDate(new Date(oldestRefreshedAt))})`}
+          {" "}— vídeos novos crescem rápido, então as views no YouTube já
+          podem estar maiores.
+        </p>
       )}
     </div>
   );

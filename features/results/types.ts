@@ -15,6 +15,24 @@ export type OpportunityCard = {
   channelSubscribers: number | null;
 };
 
+/**
+ * Card da aba Trending (Pré-M9 T2): vídeos dos últimos 7 dias dos
+ * canais da pesquisa, direto do corpus. Sem score de propósito —
+ * a régua da mediana exige 14 dias de vida (doc 3 §3.6).
+ */
+export type TrendingCard = {
+  videoId: string;
+  title: string;
+  thumbnailUrl: string | null;
+  isShort: boolean;
+  durationSeconds: number | null;
+  publishedAt: string | null;
+  viewCount: number | null;
+  channelId: string;
+  channelTitle: string;
+  channelSubscribers: number | null;
+};
+
 export type SearchSummary = {
   id: string;
   status: "queued" | "running" | "completed" | "partial" | "failed";

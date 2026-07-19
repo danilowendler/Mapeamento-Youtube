@@ -6,13 +6,17 @@ import {
 import { RelatedChannels } from "@/features/results/RelatedChannels";
 import { ResultsView } from "@/features/results/ResultsView";
 import { SearchLive } from "@/features/results/SearchLive";
-import type { OpportunityCard } from "@/features/results/types";
+import type {
+  OpportunityCard,
+  TrendingCard,
+} from "@/features/results/types";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import {
   MIN_BUCKET_SAMPLE,
   MIN_DISPLAY_SCORE,
 } from "@/services/outliers";
+import { trendingSinceIso } from "@/services/freshness";
 import { getPlanLimits } from "@/services/planService";
 import { findRelatedChannels } from "@/services/relatedService";
 
@@ -58,32 +62,52 @@ export default async function ResultadosPage({
     .map((r) => r.channel_id);
 
   let cards: OpportunityCard[] = [];
+  let trendingCards: TrendingCard[] = [];
+  let oldestRefreshedAt: string | null = null;
   let channelById = new Map<
     string,
-    { youtube_id: string; title: string; subscriber_count: number | null }
+    {
+      youtube_id: string;
+      title: string;
+      subscriber_count: number | null;
+      refreshed_at: string | null;
+    }
   >();
   const channelsWithBaselines = new Set<string>();
 
   if (allChannelIds.length > 0) {
-    const [videosRes, channelsRes, baselinesRes] = await Promise.all([
-      supabase
-        .from("videos")
-        .select(
-          "youtube_id, channel_id, title, thumbnail_url, is_short, duration_seconds, published_at, view_count, score, baseline_views, age_bucket",
-        )
-        .in("channel_id", readyChannelIds)
-        .gte("score", MIN_DISPLAY_SCORE)
-        .order("score", { ascending: false })
-        .limit(200),
-      supabase
-        .from("channels")
-        .select("youtube_id, title, subscriber_count")
-        .in("youtube_id", allChannelIds),
-      supabase
-        .from("channel_baselines")
-        .select("channel_id, format, age_bucket, sample_size")
-        .in("channel_id", readyChannelIds),
-    ]);
+    // Trending (Pré-M9 T2): últimos 7 dias direto do corpus, inclusive
+    // sem score (< 14 dias não recebe score — doc 3 §3.6). Zero cota.
+    const trendingSince = trendingSinceIso();
+    const [videosRes, channelsRes, baselinesRes, trendingRes] =
+      await Promise.all([
+        supabase
+          .from("videos")
+          .select(
+            "youtube_id, channel_id, title, thumbnail_url, is_short, duration_seconds, published_at, view_count, score, baseline_views, age_bucket",
+          )
+          .in("channel_id", readyChannelIds)
+          .gte("score", MIN_DISPLAY_SCORE)
+          .order("score", { ascending: false })
+          .limit(200),
+        supabase
+          .from("channels")
+          .select("youtube_id, title, subscriber_count, refreshed_at")
+          .in("youtube_id", allChannelIds),
+        supabase
+          .from("channel_baselines")
+          .select("channel_id, format, age_bucket, sample_size")
+          .in("channel_id", readyChannelIds),
+        supabase
+          .from("videos")
+          .select(
+            "youtube_id, channel_id, title, thumbnail_url, is_short, duration_seconds, published_at, view_count",
+          )
+          .in("channel_id", readyChannelIds)
+          .gte("published_at", trendingSince)
+          .order("view_count", { ascending: false, nullsFirst: false })
+          .limit(12),
+      ]);
 
     channelById = new Map(
       (channelsRes.data ?? []).map((c) => [c.youtube_id, c]),
@@ -125,6 +149,34 @@ export default async function ResultadosPage({
         channelSubscribers: channel?.subscriber_count ?? null,
       };
     });
+
+    trendingCards = (trendingRes.data ?? []).map((video) => {
+      const channel = channelById.get(video.channel_id);
+      return {
+        videoId: video.youtube_id,
+        title: video.title,
+        thumbnailUrl: video.thumbnail_url,
+        isShort: video.is_short,
+        durationSeconds: video.duration_seconds,
+        publishedAt: video.published_at,
+        viewCount: video.view_count,
+        channelId: video.channel_id,
+        channelTitle: channel?.title ?? "—",
+        channelSubscribers: channel?.subscriber_count ?? null,
+      };
+    });
+
+    // Frescor honesto (doc 3 §3.3): a análise mais antiga entre os
+    // canais prontos data os números exibidos na Trending
+    for (const channelId of readyChannelIds) {
+      const refreshedAt = channelById.get(channelId)?.refreshed_at ?? null;
+      if (
+        refreshedAt !== null &&
+        (oldestRefreshedAt === null || refreshedAt < oldestRefreshedAt)
+      ) {
+        oldestRefreshedAt = refreshedAt;
+      }
+    }
   }
 
   // Canais relacionados via corpus — só quando a pesquisa terminou
@@ -173,15 +225,18 @@ export default async function ResultadosPage({
   const failedInputs = (search.failed_inputs ?? []) as string[];
 
   // Favoritos do usuário entre os vídeos exibidos (RLS filtra por dono)
+  const shownVideoIds = [
+    ...new Set([
+      ...cards.map((card) => card.videoId),
+      ...trendingCards.map((card) => card.videoId),
+    ]),
+  ];
   const { data: favoriteRows } =
-    cards.length > 0
+    shownVideoIds.length > 0
       ? await supabase
           .from("favorites")
           .select("video_id")
-          .in(
-            "video_id",
-            cards.map((card) => card.videoId),
-          )
+          .in("video_id", shownVideoIds)
       : { data: [] };
   const favoritedIds = (favoriteRows ?? []).map((row) => row.video_id);
 
@@ -236,8 +291,8 @@ export default async function ResultadosPage({
           Não conseguimos analisar nenhum dos canais informados. Verifique as
           entradas e tente novamente.
         </p>
-      ) : cards.length === 0 && search.status !== "running" &&
-        search.status !== "queued" ? (
+      ) : cards.length === 0 && trendingCards.length === 0 &&
+        search.status !== "running" && search.status !== "queued" ? (
         <p className="rounded-md border border-dashed border-hairline p-sm text-body-md text-body">
           Nenhum vídeo com pelo menos{" "}
           {MIN_DISPLAY_SCORE.toLocaleString("pt-BR")}× a mediana do próprio
@@ -246,6 +301,8 @@ export default async function ResultadosPage({
       ) : (
         <ResultsView
           cards={cards}
+          trending={trendingCards}
+          oldestRefreshedAt={oldestRefreshedAt}
           favoritedIds={favoritedIds}
           savedChannelIds={[...savedChannelIds]}
           searchId={search.id}
