@@ -42,6 +42,20 @@ export type TrendingCard = {
   channelCountry: string | null;
 };
 
+/**
+ * Resumo de um canal analisado, para a aba "Canais" (visão geral).
+ * Mesma informação que ficava nos chips do topo, agora organizada.
+ * matchedVideoTitle = vídeo que trouxe o canal para a busca (T5).
+ */
+export type ChannelSummary = {
+  channelId: string;
+  title: string;
+  state: "collecting" | "ready" | "no_eligible" | "failed";
+  opportunities: number;
+  saved: boolean;
+  matchedVideoTitle?: string;
+};
+
 export type SearchSummary = {
   id: string;
   status: "queued" | "running" | "completed" | "partial" | "failed";

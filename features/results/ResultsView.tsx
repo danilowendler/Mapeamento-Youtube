@@ -3,9 +3,14 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { formatRelativeDate } from "@/utils/format";
+import { ChannelOverview } from "./ChannelOverview";
 import { TrendingVideoCard } from "./TrendingVideoCard";
 import { VideoCard } from "./VideoCard";
-import type { OpportunityCard, TrendingCard } from "./types";
+import type {
+  ChannelSummary,
+  OpportunityCard,
+  TrendingCard,
+} from "./types";
 
 type SortKey = "score" | "views" | "date" | "subs";
 
@@ -46,7 +51,9 @@ function countryNameOf(code: string): string {
 export function ResultsView({
   cards,
   trending = [],
+  channels = [],
   countries = [],
+  collecting = false,
   oldestRefreshedAt = null,
   favoritedIds = [],
   savedChannelIds = [],
@@ -54,8 +61,12 @@ export function ResultsView({
 }: {
   cards: OpportunityCard[];
   trending?: TrendingCard[];
+  /** Canais analisados, para a aba "Canais" (visão geral). */
+  channels?: ChannelSummary[];
   /** Países declarados pelos canais analisados da pesquisa (ISO). */
   countries?: string[];
+  /** Coleta em andamento — troca os estados vazios por "coletando…". */
+  collecting?: boolean;
   oldestRefreshedAt?: string | null;
   favoritedIds?: string[];
   savedChannelIds?: string[];
@@ -71,10 +82,13 @@ export function ResultsView({
 
   const formatParam = params.get("f");
   const format =
-    formatParam === "short" || formatParam === "trending"
+    formatParam === "short" ||
+    formatParam === "trending" ||
+    formatParam === "canais"
       ? formatParam
       : "long";
   const isTrending = format === "trending";
+  const isCanais = format === "canais";
   // URL limpa = piso de exibição 1.5× (Pré-M9 T1)
   const minScore = Number(params.get("s") ?? 1.5);
   const maxAgeMonths = Number(params.get("i") ?? 0); // 0 = todas
@@ -196,30 +210,47 @@ export function ResultsView({
 
   return (
     <div className="flex flex-col gap-sm">
-      <div role="tablist" className="flex border-b border-hairline">
+      <div role="tablist" className="flex flex-wrap border-b border-hairline">
         {(
           [
             { key: "long", label: `Vídeos longos (${longs.length})` },
             { key: "short", label: `Shorts (${shorts.length})` },
-            { key: "trending", label: `Trending (${trending.length})` },
+            {
+              key: "trending",
+              label: `Trending (${trending.length})`,
+              hot: true,
+            },
+            { key: "canais", label: `Canais (${channels.length})` },
           ] as const
-        ).map(({ key, label }) => (
-          <button
-            key={key}
-            role="tab"
-            aria-selected={format === key}
-            onClick={() => setParam("f", key === "long" ? null : key)}
-            className={`cursor-pointer px-xs py-xxs text-nav-link uppercase transition-colors ${
-              format === key
-                ? "border-b-2 border-ink text-ink"
-                : "text-muted-soft hover:text-body"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+        ).map((tab) => {
+          const active = format === tab.key;
+          const hot = "hot" in tab && tab.hot;
+          return (
+            <button
+              key={tab.key}
+              role="tab"
+              aria-selected={active}
+              onClick={() => setParam("f", tab.key === "long" ? null : tab.key)}
+              className={`flex cursor-pointer items-center gap-xxxs px-xs py-xxs text-nav-link uppercase transition-colors ${
+                active
+                  ? `border-b-2 text-ink ${hot ? "border-primary" : "border-ink"}`
+                  : "text-muted-soft hover:text-body"
+              }`}
+            >
+              {hot && (
+                <span
+                  aria-hidden="true"
+                  className="h-[6px] w-[6px] shrink-0 rounded-full bg-primary"
+                />
+              )}
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
+      {!isCanais && (
+        <>
       <div className="flex flex-wrap items-center gap-xxs">
         {!isTrending && (
           <>
@@ -317,14 +348,17 @@ export function ResultsView({
           preenchem — esses ficam em “Não informado”, não somem da pesquisa.
         </p>
       )}
+        </>
+      )}
 
-      {isTrending ? (
+      {isCanais ? (
+        <ChannelOverview channels={channels} />
+      ) : isTrending ? (
         trendingVisible.length === 0 ? (
           <p className="rounded-md border border-dashed border-hairline p-sm text-body-md text-body">
-            Nenhum vídeo publicado nos últimos 7 dias pelos canais desta
-            pesquisa{subsRange !== "todos" ? " com o filtro de canal atual" : ""}
-            . A Trending mostra o que está saindo agora, antes mesmo de ter
-            score.
+            {collecting
+              ? "Coletando… os lançamentos recentes aparecem conforme os canais ficam prontos."
+              : `Nenhum vídeo publicado nos últimos 7 dias pelos canais desta pesquisa${subsRange !== "todos" ? " com o filtro de canal atual" : ""}. A Trending mostra o que está saindo agora, antes mesmo de ter score.`}
           </p>
         ) : (
           <ul className="flex flex-col gap-xs">
@@ -342,8 +376,11 @@ export function ResultsView({
         )
       ) : visible.length === 0 ? (
         <p className="rounded-md border border-dashed border-hairline p-sm text-body-md text-body">
-          Nenhum vídeo neste formato com os filtros atuais — ajuste o score
-          mínimo ou os demais filtros.
+          {collecting
+            ? "Coletando… os vídeos aparecem conforme os canais ficam prontos."
+            : cards.length === 0
+              ? "Nenhum vídeo com pelo menos 1,5× a mediana do próprio canal — os vídeos destes canais performam de forma uniforme. Veja os canais analisados na aba Canais."
+              : "Nenhum vídeo neste formato com os filtros atuais — ajuste o score mínimo ou os demais filtros."}
         </p>
       ) : (
         <ul className="flex flex-col gap-xs">
