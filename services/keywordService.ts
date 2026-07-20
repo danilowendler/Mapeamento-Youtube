@@ -43,7 +43,9 @@ export async function resolveKeywordChannels(
       .eq("keyword", keyword)
       .order("position");
     if (error) throw new Error(`keyword_results: ${error.message}`);
-    return distinctChannels(
+    // keyword_results guarda uma linha por posição (com repetições de
+    // canal), então isto alimenta o ranqueador por frequência × posição
+    return rankChannelsByRelevance(
       (rows ?? []).map((r) => r.channel_id),
       MAX_CHANNELS_PER_KEYWORD,
     );
@@ -77,7 +79,7 @@ export async function resolveKeywordChannels(
     }
   }
 
-  return distinctChannels(
+  return rankChannelsByRelevance(
     hits.map((hit) => hit.channelId),
     MAX_CHANNELS_PER_KEYWORD,
   );
@@ -199,4 +201,46 @@ export function distinctChannels(ids: string[], limit: number): string[] {
     }
   }
   return result;
+}
+
+/**
+ * Ranqueia canais por relevância combinada de FREQUÊNCIA × POSIÇÃO nos
+ * resultados do search.list (Pré-M9 T4, parte 1 — sem LLM, zero cota).
+ *
+ * `channelIdsInOrder` são os canais na ordem de relevância do YouTube
+ * (índice 0 = topo), COM repetições — um canal aparece uma vez por
+ * vídeo que rankeou. Cada aparição na posição `i` soma peso `n - i`
+ * (topo vale `n`, último vale 1). A soma acumula a frequência, então:
+ * um canal que aparece várias vezes sobe acima de quem entrou "de
+ * raspão" (uma aparição isolada e tardia), mas uma aparição forte no
+ * topo ainda vale muito. Desempate determinístico pela posição mais
+ * alta. Decaimento LINEAR de propósito: o harmônico (1/(i+1)) daria
+ * peso quase todo à posição e não corrigiria o ruído do tema amplo.
+ */
+export function rankChannelsByRelevance(
+  channelIdsInOrder: string[],
+  limit: number,
+): string[] {
+  const n = channelIdsInOrder.length;
+  const scoreByChannel = new Map<string, number>();
+  const bestPositionByChannel = new Map<string, number>();
+  channelIdsInOrder.forEach((channelId, index) => {
+    scoreByChannel.set(
+      channelId,
+      (scoreByChannel.get(channelId) ?? 0) + (n - index),
+    );
+    if (!bestPositionByChannel.has(channelId)) {
+      bestPositionByChannel.set(channelId, index);
+    }
+  });
+
+  return [...scoreByChannel.keys()]
+    .sort((a, b) => {
+      const byScore = (scoreByChannel.get(b) ?? 0) - (scoreByChannel.get(a) ?? 0);
+      if (byScore !== 0) return byScore;
+      return (
+        (bestPositionByChannel.get(a) ?? 0) - (bestPositionByChannel.get(b) ?? 0)
+      );
+    })
+    .slice(0, limit);
 }
