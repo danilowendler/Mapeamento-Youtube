@@ -11,7 +11,13 @@ export const createSearchSchema = z.union([
   z.object({
     mode: z.literal("channels"),
     inputs: z
-      .array(z.string().trim().min(2, "Entrada muito curta."))
+      .array(
+        z
+          .string()
+          .trim()
+          .min(2, "Entrada muito curta.")
+          .max(200, "Entrada muito longa para uma URL ou @handle."),
+      )
       .min(1, "Informe pelo menos um canal.")
       .max(
         BETA_MAX_CHANNELS_PER_SEARCH,

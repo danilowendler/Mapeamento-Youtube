@@ -14,7 +14,8 @@ export const signUpSchema = z.object({
   displayName: z
     .string()
     .trim()
-    .min(2, "Informe seu nome (mínimo 2 caracteres)."),
+    .min(2, "Informe seu nome (mínimo 2 caracteres).")
+    .max(60, "Nome de até 60 caracteres."),
   email: emailSchema,
   password: passwordSchema,
 });
