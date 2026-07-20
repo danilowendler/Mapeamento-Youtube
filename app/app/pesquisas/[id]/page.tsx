@@ -1,12 +1,9 @@
 import { notFound } from "next/navigation";
-import {
-  ChannelChips,
-  type ChannelChip,
-} from "@/features/results/ChannelChips";
 import { RelatedChannels } from "@/features/results/RelatedChannels";
 import { ResultsView } from "@/features/results/ResultsView";
 import { SearchLive } from "@/features/results/SearchLive";
 import type {
+  ChannelSummary,
   OpportunityCard,
   TrendingCard,
 } from "@/features/results/types";
@@ -270,7 +267,7 @@ export default async function ResultadosPage({
     if (title) matchedTitleByChannel.set(channelId, title);
   }
 
-  const chips: ChannelChip[] = (results ?? []).map((result) => ({
+  const channelSummaries: ChannelSummary[] = (results ?? []).map((result) => ({
     channelId: result.channel_id,
     title: channelById.get(result.channel_id)?.title ?? result.channel_id,
     state:
@@ -353,7 +350,6 @@ export default async function ResultadosPage({
             channelsDone: search.channels_done,
           }}
         />
-        <ChannelChips chips={chips} />
         {failedInputs.length > 0 && (
           <p className="text-body-sm text-warning">
             Não encontramos: {failedInputs.join(", ")} — confira se são URLs
@@ -367,8 +363,9 @@ export default async function ResultadosPage({
           Não conseguimos analisar nenhum dos canais informados. Verifique as
           entradas e tente novamente.
         </p>
-      ) : cards.length === 0 && trendingCards.length === 0 &&
-        search.status !== "running" && search.status !== "queued" ? (
+      ) : channelSummaries.length === 0 && cards.length === 0 &&
+        trendingCards.length === 0 && search.status !== "running" &&
+        search.status !== "queued" ? (
         <p className="rounded-md border border-dashed border-hairline p-sm text-body-md text-body">
           Nenhum vídeo com pelo menos{" "}
           {MIN_DISPLAY_SCORE.toLocaleString("pt-BR")}× a mediana do próprio
@@ -378,7 +375,11 @@ export default async function ResultadosPage({
         <ResultsView
           cards={cards}
           trending={trendingCards}
+          channels={channelSummaries}
           countries={searchCountries}
+          collecting={
+            search.status === "running" || search.status === "queued"
+          }
           oldestRefreshedAt={oldestRefreshedAt}
           favoritedIds={favoritedIds}
           savedChannelIds={[...savedChannelIds]}
