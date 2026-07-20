@@ -144,6 +144,50 @@ export async function resolveNicheChannels(
   };
 }
 
+export type KeywordMatchRow = {
+  channel_id: string;
+  video_id: string | null;
+  position: number;
+};
+
+/**
+ * "Vídeo que casou": para cada canal, o vídeo de melhor posição que o
+ * trouxe para a busca (Pré-M9 T5). Ignora linhas sem video_id. Puro —
+ * não depende da ordem das linhas.
+ */
+export function pickBestMatchPerChannel(
+  rows: KeywordMatchRow[],
+): Map<string, string> {
+  const bestVideo = new Map<string, string>();
+  const bestPos = new Map<string, number>();
+  for (const row of rows) {
+    if (!row.video_id) continue;
+    const prev = bestPos.get(row.channel_id);
+    if (prev === undefined || row.position < prev) {
+      bestVideo.set(row.channel_id, row.video_id);
+      bestPos.set(row.channel_id, row.position);
+    }
+  }
+  return bestVideo;
+}
+
+/**
+ * Mapa canal → vídeo que casou com a busca, a partir do corpus de
+ * keyword_results (service role — a UI nunca lê direto). As keywords
+ * já devem chegar normalizadas (como são gravadas). Zero cota.
+ */
+export async function matchedVideosByChannel(
+  keywords: string[],
+): Promise<Map<string, string>> {
+  if (keywords.length === 0) return new Map();
+  const db = createAdminClient();
+  const { data } = await db
+    .from("keyword_results")
+    .select("channel_id, video_id, position")
+    .in("keyword", keywords);
+  return pickBestMatchPerChannel(data ?? []);
+}
+
 export function distinctChannels(ids: string[], limit: number): string[] {
   const seen = new Set<string>();
   const result: string[] = [];
