@@ -18,6 +18,11 @@ import {
   partialScore,
 } from "@/services/outliers";
 import { trendingSinceIso } from "@/services/freshness";
+import {
+  MAX_KEYWORDS_PER_NICHE,
+  matchedVideosByChannel,
+  normalizeKeyword,
+} from "@/services/keywordService";
 import { getPlanLimits } from "@/services/planService";
 import { findRelatedChannels } from "@/services/relatedService";
 
@@ -45,6 +50,7 @@ export default async function ResultadosPage({
   const searchInput = search.input as {
     keyword?: string;
     nicheName?: string;
+    nicheSlug?: string;
   };
   const subtitle = searchInput.nicheName
     ? `Nicho: ${searchInput.nicheName}`
@@ -223,6 +229,47 @@ export default async function ResultadosPage({
     saved: savedChannelIds.has(channel.channelId),
   }));
 
+  // "Vídeo que casou" (T5): em buscas por keyword/nicho, qual vídeo
+  // trouxe cada canal para a pesquisa — enriquece o chip sem mudar o
+  // ranking. Nada em buscas por canal (o usuário escolheu os canais).
+  let matchKeywords: string[] = [];
+  if (searchInput.keyword) {
+    matchKeywords = [searchInput.keyword]; // já normalizada na criação
+  } else if (searchInput.nicheSlug) {
+    const { data: niche } = await supabase
+      .from("niches")
+      .select("keywords")
+      .eq("slug", searchInput.nicheSlug)
+      .maybeSingle();
+    matchKeywords = ((niche?.keywords as string[] | undefined) ?? [])
+      .slice(0, MAX_KEYWORDS_PER_NICHE)
+      .map(normalizeKeyword);
+  }
+
+  const matchedVideoByChannel =
+    matchKeywords.length > 0
+      ? await matchedVideosByChannel(matchKeywords)
+      : new Map<string, string>();
+
+  // Título do vídeo que casou — só quando já está no corpus (degrada
+  // em silêncio: sem título, o chip simplesmente não ganha a linha)
+  const matchedVideoIds = [...new Set(matchedVideoByChannel.values())];
+  const { data: matchedTitleRows } =
+    matchedVideoIds.length > 0
+      ? await supabase
+          .from("videos")
+          .select("youtube_id, title")
+          .in("youtube_id", matchedVideoIds)
+      : { data: [] };
+  const titleByVideo = new Map(
+    (matchedTitleRows ?? []).map((v) => [v.youtube_id, v.title]),
+  );
+  const matchedTitleByChannel = new Map<string, string>();
+  for (const [channelId, videoId] of matchedVideoByChannel) {
+    const title = titleByVideo.get(videoId);
+    if (title) matchedTitleByChannel.set(channelId, title);
+  }
+
   const chips: ChannelChip[] = (results ?? []).map((result) => ({
     channelId: result.channel_id,
     title: channelById.get(result.channel_id)?.title ?? result.channel_id,
@@ -237,6 +284,7 @@ export default async function ResultadosPage({
     opportunities: cards.filter((c) => c.channelId === result.channel_id)
       .length,
     saved: savedChannelIds.has(result.channel_id),
+    matchedVideoTitle: matchedTitleByChannel.get(result.channel_id),
   }));
 
   const failedInputs = (search.failed_inputs ?? []) as string[];
