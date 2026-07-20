@@ -110,7 +110,7 @@ Entregáveis:
 - **Prompt para o Relume** (proposta de valor, público, seções do [doc 6, §6.7](06-ux-ui.md), direção visual do [DESIGN-ferrari.md](../DESIGN-ferrari.md)) → estrutura gerada → aplicação dos tokens na exportação/implementação
 - Termos de uso + política de privacidade; exclusão de conta self-service ([doc 8, §8.3](08-seguranca-e-operacao.md))
 - Rate limiting nas rotas públicas; alertas de cota e erro ([doc 8, §8.5](08-seguranca-e-operacao.md))
-- **Auditoria completa com a skill `security-audit`** + checklist pré-lançamento inteiro ([doc 8, §8.8](08-seguranca-e-operacao.md))
+- **Auditoria completa com a skill `security-audit`** + checklist pré-lançamento inteiro ([doc 8, §8.8](08-seguranca-e-operacao.md)) — ✅ 19/07/2026: zero achados críticos/altos; corrigidos na branch m9-security-audit: headers de segurança em next.config (CSP completa adiada de propósito — exige nonce+validação Stripe/Sentry), max length em displayName (60) e inputs de canal (200), override postcss≥8.5.10 (audit limpo). Recomendações operacionais registradas no relatório da auditoria (verificar INNGEST_DEV ausente em prod, Deployment Protection em previews, SMTP próprio/SPF/DKIM no go-live, pin de Actions por SHA)
 - E2E Playwright: cadastro → pesquisa → favoritar → checkout de teste
 
 ✅ Conclusão: checklist do doc 8 100% marcado; primeira assinatura real processada; lançamento.
@@ -202,6 +202,18 @@ Fora de escopo decidido: seletor de região/idioma na BUSCA (mexe em
 cache de keywords 72h + 100 un/busca fria + posicionamento Brasil-first)
 e rebaixamento global da régua de oportunidade para 1.5× (exigiria
 re-backfill das contagens materializadas — só se o mercado consolidar).
+
+APROVADO E ADIADO para depois do M9 — T4 · Relevância de keyword
+(19/07/2026): buscas amplas ("saude") trazem canais fora do tema.
+Plano em duas partes: (1) ranquear canais por frequência×posição nos
+~50 hits do search.list (grátis, sem LLM, trocar distinctChannels);
+(2) filtro de relevância de canais via Claude Haiku 4.5 no service
+layer (runSearch, fase resolver-tema; ~US$ 0,002/keyword fria, cache
+72h compartilhado, degradação silenciosa se a API falhar; exige
+migration pequena: coluna `keyword_results.relevant`). DESCARTADO:
+expansão de keywords via LLM (cada keyword extra = 100 un de cota) e
+LLM conversacional no chat (não resolve relevância; fica como polish
+de marca futuro).
 
 ✅ Conclusão (por lote): suite verde, merge --no-ff, avaliação do
 fundador em produção. Depois: M9 final (security-audit + Playwright +
