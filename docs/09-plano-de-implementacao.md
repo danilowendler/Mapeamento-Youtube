@@ -205,17 +205,22 @@ cache de keywords 72h + 100 un/busca fria + posicionamento Brasil-first)
 e rebaixamento global da régua de oportunidade para 1.5× (exigiria
 re-backfill das contagens materializadas — só se o mercado consolidar).
 
-APROVADO E ADIADO para depois do M9 — T4 · Relevância de keyword
-(19/07/2026): buscas amplas ("saude") trazem canais fora do tema.
-Plano em duas partes: (1) ranquear canais por frequência×posição nos
-~50 hits do search.list (grátis, sem LLM, trocar distinctChannels);
-(2) filtro de relevância de canais via Claude Haiku 4.5 no service
-layer (runSearch, fase resolver-tema; ~US$ 0,002/keyword fria, cache
-72h compartilhado, degradação silenciosa se a API falhar; exige
-migration pequena: coluna `keyword_results.relevant`). DESCARTADO:
-expansão de keywords via LLM (cada keyword extra = 100 un de cota) e
-LLM conversacional no chat (não resolve relevância; fica como polish
-de marca futuro).
+T4 · Relevância de keyword (buscas amplas como "saude" traziam canais
+fora do tema). Plano em duas partes:
+- ✅ Parte 1 (20/07/2026, branch t4-ranking-canais): `rankChannelsByRelevance`
+  no keywordService — ranqueia canais por FREQUÊNCIA × POSIÇÃO nos ~50
+  hits do search.list (peso linear `n - i` somado; decaimento linear de
+  propósito, o harmônico não corrigiria o ruído). Substitui
+  `distinctChannels` na resolução de keyword (cache e fria); nicho segue
+  usando distinctChannels no merge round-robin. Grátis, read-time, zero
+  cota, sem migration. +7 testes.
+- ⏳ Parte 2 (adiada, aprovada): filtro de relevância de canais via
+  Claude Haiku 4.5 no service layer (~US$ 0,003/keyword fria — poucos
+  US$/mês; cache 72h compartilhado; degradação silenciosa; exige
+  migration pequena `keyword_results.relevant`). Só se a parte 1 não
+  bastar. DESCARTADO: expansão de keywords via LLM (cada keyword extra =
+  100 un de cota) e LLM conversacional no chat (não resolve relevância;
+  polish de marca futuro).
 
 ✅ Conclusão (por lote): suite verde, merge --no-ff, avaliação do
 fundador em produção. Depois: M9 final (security-audit + Playwright +
