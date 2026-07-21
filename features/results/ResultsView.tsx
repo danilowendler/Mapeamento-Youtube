@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
+import { TRENDING_WINDOW_DAYS } from "@/services/freshness";
 import { formatRelativeDate } from "@/utils/format";
 import { ChannelOverview } from "./ChannelOverview";
 import { TrendingVideoCard } from "./TrendingVideoCard";
@@ -205,6 +207,14 @@ export function ResultsView({
     return filtered;
   }, [isTrending, trending, subsRange, matchesCountry, sort]);
 
+  // Trending vazia por análise VELHA (coleta > 7 d) é diferente de
+  // "os canais não postaram": só a primeira tem conserto (reanalisar).
+  const trendingIsStale =
+    !collecting &&
+    oldestRefreshedAt !== null &&
+    (now - new Date(oldestRefreshedAt).getTime()) / DAY_MS >
+      TRENDING_WINDOW_DAYS;
+
   const selectClass =
     "h-[36px] cursor-pointer rounded-sm border border-hairline bg-canvas px-xxs text-body-sm text-ink";
 
@@ -355,11 +365,34 @@ export function ResultsView({
         <ChannelOverview channels={channels} />
       ) : isTrending ? (
         trendingVisible.length === 0 ? (
-          <p className="rounded-md border border-dashed border-hairline p-sm text-body-md text-body">
-            {collecting
-              ? "Coletando… os lançamentos recentes aparecem conforme os canais ficam prontos."
-              : `Nenhum vídeo publicado nos últimos 7 dias pelos canais desta pesquisa${subsRange !== "todos" ? " com o filtro de canal atual" : ""}. A Trending mostra o que está saindo agora, antes mesmo de ter score.`}
-          </p>
+          collecting ? (
+            <p className="rounded-md border border-dashed border-hairline p-sm text-body-md text-body">
+              Coletando… os lançamentos recentes aparecem conforme os canais
+              ficam prontos.
+            </p>
+          ) : trendingIsStale ? (
+            <div className="flex flex-col items-start gap-xs rounded-md border border-dashed border-hairline p-sm">
+              <p className="text-body-md text-body">
+                Esta análise foi feita
+                {oldestRefreshedAt
+                  ? ` ${formatRelativeDate(new Date(oldestRefreshedAt))}`
+                  : " há um tempo"}{" "}
+                — por isso a Trending ainda não mostra o que estes canais
+                publicaram nos últimos 7 dias. Rode uma nova análise para
+                atualizar.
+              </p>
+              <Link
+                href="/app"
+                className="inline-flex h-[36px] items-center rounded-sm border border-ink px-xs text-caption-upper uppercase text-ink transition-colors hover:bg-canvas-elevated/30"
+              >
+                Reanalisar em uma nova pesquisa
+              </Link>
+            </div>
+          ) : (
+            <p className="rounded-md border border-dashed border-hairline p-sm text-body-md text-body">
+              {`Nenhum vídeo publicado nos últimos 7 dias pelos canais desta pesquisa${subsRange !== "todos" ? " com o filtro de canal atual" : ""}. A Trending mostra o que está saindo agora, antes mesmo de ter score.`}
+            </p>
+          )
         ) : (
           <ul className="flex flex-col gap-xs">
             {trendingVisible.map((card) => (
