@@ -311,24 +311,28 @@ export function ResultsView({
             <option value="1m-mais">1 mi+</option>
           </select>
         </label>
-        <label className="flex items-center gap-xxxs text-body-sm text-body">
-          País
-          <select
-            className={selectClass}
-            value={country}
-            onChange={(e) =>
-              setParam("p", e.target.value === "todos" ? null : e.target.value)
-            }
-          >
-            <option value="todos">Todos</option>
-            {countryOptions.map(({ code, name }) => (
-              <option key={code} value={code}>
-                {name}
-              </option>
-            ))}
-            <option value={COUNTRY_UNKNOWN}>Não informado</option>
-          </select>
-        </label>
+        {/* Sem país declarado, o select só teria "Todos" + "Não informado"
+            (ambos = tudo) — inútil; some. Com ≥ 1 país, ainda ajuda. */}
+        {countryOptions.length > 0 && (
+          <label className="flex items-center gap-xxxs text-body-sm text-body">
+            País
+            <select
+              className={selectClass}
+              value={country}
+              onChange={(e) =>
+                setParam("p", e.target.value === "todos" ? null : e.target.value)
+              }
+            >
+              <option value="todos">Todos</option>
+              {countryOptions.map(({ code, name }) => (
+                <option key={code} value={code}>
+                  {name}
+                </option>
+              ))}
+              <option value={COUNTRY_UNKNOWN}>Não informado</option>
+            </select>
+          </label>
+        )}
         <label className="ml-auto flex items-center gap-xxxs text-body-sm text-body">
           Ordenar
           <select
