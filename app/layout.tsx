@@ -14,12 +14,32 @@ const fraunces = Fraunces({
   subsets: ["latin"],
 });
 
+// Base absoluta para OG/canonical: a mesma env que auth e Stripe usam,
+// então dev resolve para localhost e produção para https://beviewer.com.
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://beviewer.com";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(appUrl),
   title: {
     default: BRAND.metaTitle,
     template: `%s · ${BRAND.name}`,
   },
   description: BRAND.metaDescription,
+  // Defaults de compartilhamento (herdados por todas as páginas). Sem
+  // canonical/og:url globais de propósito: no layout raiz marcariam
+  // toda página como se fosse a home.
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    siteName: BRAND.name,
+    title: BRAND.metaTitle,
+    description: BRAND.metaDescription,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: BRAND.metaTitle,
+    description: BRAND.metaDescription,
+  },
 };
 
 export default function RootLayout({
