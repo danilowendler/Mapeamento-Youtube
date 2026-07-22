@@ -15,6 +15,7 @@
 - **Domínio `beviewer.com` no ar** + `metadataBase`/OpenGraph.
 - **Faxina bloco 2:** Trending vazia ciente; filtro País some quando vazio; "vídeo que casou" 100% (migration `keyword_results.video_title`); item 5 (A Web Analytics, B funil SQL, C landing quick-win + roadmap CRO).
 - **Sessão de cota / ADR-007 (22/07):** decisão tomada (pesquisa + arquitetura, sem código) — ver Frente 4 e [`docs/pesquisa/`](pesquisa/).
+- **Trending v2 — F1 + F2 (22/07):** ranking do vídeo vs. os recentes do mesmo formato do canal (`rankAmongRecent`, mantido o score parcial) + separação de longos/shorts em seções na Trending com selo "SHORT". Read-time, zero cota, sem migration. ✅ no ar.
 
 ---
 
@@ -67,14 +68,12 @@ F3 é uma decisão de produto do fundador.
 Pedido: mostrar "quão bem este vídeo foi vs. os últimos vídeos do canal" (ex.: "melhor que os últimos 3"), tipo K/N.
 - **Viável e on-philosophy** — continua relativo ao próprio canal (a premissa), e é **mais honesto** que o `partialScore` atual para vídeos < 14 dias: compara vídeo novo com outros vídeos recentes (idade parecida) em vez de com a mediana histórica madura (que subestima). Dados já no corpus (últimos uploads do canal). Read-time, sem migration, zero cota.
 - **Decisão do fundador (22/07): MANTER o `partialScore` E ADICIONAR a classificação** (não substituir). ✅ Aprovado — lote "Trending v2".
-- **Plano de implementação:** helper puro `rankAmongRecent(video, canalMesmoFormato, window=5)` em `services/outliers.ts` (+ testes) que compara o vídeo com os últimos N uploads do **mesmo formato publicados ANTES dele** (beat honesto: já supera quem teve mais tempo) → `{ beaten, of }` ou null se base insuficiente; novo campo `recentRank` no `TrendingCard`; a page busca os vídeos recentes do mesmo formato dos canais do Trending (read-time, corpus, zero cota) e computa; o `TrendingVideoCard` ganha a linha "melhor que K dos últimos N vídeos do canal" (mantendo o selo de score parcial).
-- Esforço: médio. **Pendente: implementar após a compactação.**
+- **✅ IMPLEMENTADO (22/07):** helper puro `rankAmongRecent(video, mesmoFormato, window=5)` em `services/outliers.ts` (+6 testes; base mínima = 3 priores) — compara o vídeo com os últimos N uploads do **mesmo formato publicados ANTES dele** → `{ beaten, of }` ou null; campo `recentRank` no `TrendingCard`; a page busca o histórico recente só dos canais que aparecem na Trending (read-time, corpus, zero cota); o `TrendingVideoCard` mostra a linha "↑ K/N — melhor que K dos últimos N vídeos do canal", mantendo o selo de score parcial.
 
 ### F2 · Trending: separar longos e shorts + sinalização especial nos shorts
 Pedido: hoje estão misturados; separar e destacar os shorts.
 - **Viável e ainda mais alinhado** à regra "shorts e longos nunca se misturam". A Trending mistura de propósito hoje (era "só recência × views"), mas um usuário real achou confuso.
-- **✅ Aprovado — lote "Trending v2".** Separar a aba Trending em **duas seções (Vídeos longos / Shorts)** no `ResultsView` + **selo "SHORT"** no `TrendingVideoCard` (sem vermelho, que é reservado) no lugar da etiqueta de texto atual. Combina com F1 (a comparação é **dentro do formato**).
-- Esforço: pequeno-médio. **Pendente: implementar após a compactação.**
+- **✅ IMPLEMENTADO (22/07):** Trending separada em **duas seções (Vídeos longos / Shorts)** no `ResultsView` + **selo "SHORT"** (contorno ink, sem vermelho) no `TrendingVideoCard` no lugar da etiqueta de texto. Combina com F1 (a comparação é **dentro do formato**).
 
 ### F3 · Diminuir ainda mais o score (fundador em dúvida — a avaliar)
 Pedido: baixar o score ainda mais (piso de exibição hoje = 1,5×).
@@ -84,8 +83,8 @@ Pedido: baixar o score ainda mais (piso de exibição hoje = 1,5×).
 - Esforço: trivial (se aprovado).
 
 ### Encaminhamento
-- **F1 + F2 → lote "Trending v2"** na **Frente 5 (refinamentos)** — provável próximo lote de produto.
-- **F3 → decisão do fundador** (recomendação acima); F1 pode torná-lo desnecessário.
+- **F1 + F2 → lote "Trending v2"** ✅ **ENTREGUE (22/07)** — no ar.
+- **F3 → decisão do fundador** (recomendação acima); com o F1 no ar, dá para observar se o desejo por trás do F3 já foi atendido antes de mexer no piso.
 
 ---
 
