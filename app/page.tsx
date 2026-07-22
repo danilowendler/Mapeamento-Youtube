@@ -206,19 +206,25 @@ export default function Home() {
               milhares de vídeos para revelar oportunidades reais — temas que
               performaram até 100× acima da média do próprio canal.
             </p>
-            <div className="mt-xxs flex items-center gap-xs">
-              <Link
-                href="/cadastro"
-                className="inline-flex h-[48px] items-center bg-primary px-md text-button-label uppercase text-on-primary active:bg-primary-active"
-              >
-                Começar grátis
-              </Link>
-              <a
-                href="#como-funciona"
-                className="inline-flex h-[48px] items-center border border-ink px-md text-button-label uppercase text-ink"
-              >
-                Ver como funciona
-              </a>
+            <div className="mt-xxs flex flex-col items-center gap-xxs">
+              <div className="flex items-center gap-xs">
+                <Link
+                  href="/cadastro"
+                  className="inline-flex h-[48px] items-center bg-primary px-md text-button-label uppercase text-on-primary active:bg-primary-active"
+                >
+                  Começar grátis
+                </Link>
+                <a
+                  href="#como-funciona"
+                  className="inline-flex h-[48px] items-center border border-ink px-md text-button-label uppercase text-ink"
+                >
+                  Ver como funciona
+                </a>
+              </div>
+              {/* Redutor de risco no ponto de decisão (item 5C, #2) */}
+              <p className="text-caption text-muted">
+                Grátis · 3 pesquisas por mês · sem cartão de crédito
+              </p>
             </div>
           </div>
           <OutlierField />
@@ -442,12 +448,17 @@ export default function Home() {
               </h2>
             </Reveal>
             <Reveal delayMs={120}>
-              <Link
-                href="/cadastro"
-                className="inline-flex h-[48px] items-center bg-primary px-md text-button-label uppercase text-on-primary active:bg-primary-active"
-              >
-                Começar grátis
-              </Link>
+              <div className="flex flex-col items-center gap-xxs">
+                <Link
+                  href="/cadastro"
+                  className="inline-flex h-[48px] items-center bg-primary px-md text-button-label uppercase text-on-primary active:bg-primary-active"
+                >
+                  Começar grátis
+                </Link>
+                <p className="text-caption text-muted">
+                  Grátis · 3 pesquisas por mês · sem cartão de crédito
+                </p>
+              </div>
             </Reveal>
           </div>
         </section>
