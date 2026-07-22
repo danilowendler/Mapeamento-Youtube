@@ -4,7 +4,9 @@ import {
   analyzeChannel,
   median,
   partialScore,
+  rankAmongRecent,
   type AnalyzableVideo,
+  type RecentRankVideo,
 } from "./outliers";
 
 const NOW = new Date("2026-07-11T00:00:00Z");
@@ -41,6 +43,79 @@ describe("partialScore (piso de vídeo jovem — Trending)", () => {
   it("entradas nulas: null", () => {
     expect(partialScore(null, 1000)).toBeNull();
     expect(partialScore(500, null)).toBeNull();
+  });
+});
+
+describe("rankAmongRecent (posição vs. vídeos recentes do canal — F1)", () => {
+  const rv = (id: string, views: number, ageDays: number): RecentRankVideo => ({
+    youtubeId: id,
+    publishedAt: daysAgo(ageDays),
+    viewCount: views,
+  });
+
+  it("conta só os priores (publicados ANTES do alvo) e quantos ele bate", () => {
+    const target = rv("alvo", 5_000, 2);
+    const priors = [
+      rv("a", 1_000, 10),
+      rv("b", 2_000, 20),
+      rv("c", 9_000, 30),
+      rv("d", 3_000, 40),
+    ];
+    // bate a, b, d (3) mas não c (9k) → 3 de 4
+    expect(rankAmongRecent(target, [target, ...priors])).toEqual({
+      beaten: 3,
+      of: 4,
+    });
+  });
+
+  it("respeita a janela: só os N priores mais recentes", () => {
+    const target = rv("alvo", 100, 1);
+    const priors = Array.from({ length: 8 }, (_, i) =>
+      rv(`p${i}`, 999_999, 5 + i),
+    );
+    // janela 5: alvo (100) perde para todos os 5 mais recentes
+    expect(rankAmongRecent(target, [target, ...priors])).toEqual({
+      beaten: 0,
+      of: 5,
+    });
+  });
+
+  it("ignora vídeos publicados DEPOIS do alvo", () => {
+    const target = rv("alvo", 5_000, 20);
+    const posteriores = [rv("novo1", 1, 2), rv("novo2", 1, 5), rv("novo3", 1, 8)];
+    const priores = [rv("v1", 1_000, 30), rv("v2", 2_000, 40), rv("v3", 3_000, 50)];
+    expect(
+      rankAmongRecent(target, [target, ...posteriores, ...priores]),
+    ).toEqual({ beaten: 3, of: 3 });
+  });
+
+  it("base insuficiente (< 3 priores): null", () => {
+    const target = rv("alvo", 5_000, 2);
+    expect(rankAmongRecent(target, [target, rv("a", 1, 10), rv("b", 1, 20)])).toBeNull();
+  });
+
+  it("alvo sem data ou sem views: null", () => {
+    const priors = [rv("a", 1, 10), rv("b", 1, 20), rv("c", 1, 30)];
+    expect(
+      rankAmongRecent({ youtubeId: "x", publishedAt: null, viewCount: 5 }, priors),
+    ).toBeNull();
+    expect(
+      rankAmongRecent(
+        { youtubeId: "x", publishedAt: daysAgo(2), viewCount: null },
+        priors,
+      ),
+    ).toBeNull();
+  });
+
+  it("priores sem data/views não contam para a amostra", () => {
+    const target = rv("alvo", 5_000, 2);
+    const priors = [
+      rv("a", 1_000, 10),
+      { youtubeId: "b", publishedAt: null, viewCount: 2_000 },
+      { youtubeId: "c", publishedAt: daysAgo(30), viewCount: null },
+    ];
+    // só "a" é prior válido → 1 < 3 → null
+    expect(rankAmongRecent(target, [target, ...priors])).toBeNull();
   });
 });
 

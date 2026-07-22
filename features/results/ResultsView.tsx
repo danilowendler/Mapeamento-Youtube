@@ -45,10 +45,11 @@ function countryNameOf(code: string): string {
 
 /**
  * Resultados com filtros e ordenação client-side, estado na URL
- * (compartilhável — doc 6 §6.4). Formatos nunca se misturam nas abas
- * de score; a aba Trending (Pré-M9 T2) mistura de propósito — não há
- * ranking por score ali, só recência × views — e por isso o formato
- * vira etiqueta no card e os filtros de score/idade somem.
+ * (compartilhável — doc 6 §6.4). Formatos nunca se misturam: nas abas
+ * de score cada aba é um formato, e a aba Trending (Pré-M9 T2) separa
+ * longos e shorts em duas seções (F2). Na Trending não há ranking por
+ * score — só recência × views + posição vs. recentes do canal (F1) —
+ * por isso os filtros de score/idade somem ali.
  */
 export function ResultsView({
   cards,
@@ -206,6 +207,17 @@ export function ResultsView({
     });
     return filtered;
   }, [isTrending, trending, subsRange, matchesCountry, sort]);
+
+  // F2: shorts e longos nunca se misturam (regra do projeto) — a Trending
+  // agora separa em duas seções, cada uma já filtrada e ordenada acima.
+  const trendingLongs = useMemo(
+    () => trendingVisible.filter((card) => !card.isShort),
+    [trendingVisible],
+  );
+  const trendingShorts = useMemo(
+    () => trendingVisible.filter((card) => card.isShort),
+    [trendingVisible],
+  );
 
   // Trending vazia por análise VELHA (coleta > 7 d) é diferente de
   // "os canais não postaram": só a primeira tem conserto (reanalisar).
@@ -398,18 +410,34 @@ export function ResultsView({
             </p>
           )
         ) : (
-          <ul className="flex flex-col gap-xs">
-            {trendingVisible.map((card) => (
-              <li key={card.videoId}>
-                <TrendingVideoCard
-                  card={card}
-                  favorited={favoritedSet.has(card.videoId)}
-                  channelSaved={savedChannelSet.has(card.channelId)}
-                  searchId={searchId}
-                />
-              </li>
-            ))}
-          </ul>
+          <div className="flex flex-col gap-sm">
+            {(
+              [
+                { label: "Vídeos longos", items: trendingLongs },
+                { label: "Shorts", items: trendingShorts },
+              ] as const
+            ).map((section) =>
+              section.items.length === 0 ? null : (
+                <section key={section.label} className="flex flex-col gap-xs">
+                  <h3 className="text-caption-upper uppercase text-muted-soft">
+                    {section.label} ({section.items.length})
+                  </h3>
+                  <ul className="flex flex-col gap-xs">
+                    {section.items.map((card) => (
+                      <li key={card.videoId}>
+                        <TrendingVideoCard
+                          card={card}
+                          favorited={favoritedSet.has(card.videoId)}
+                          channelSaved={savedChannelSet.has(card.channelId)}
+                          searchId={searchId}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ),
+            )}
+          </div>
         )
       ) : visible.length === 0 ? (
         <p className="rounded-md border border-dashed border-hairline p-sm text-body-md text-body">

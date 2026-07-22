@@ -28,6 +28,12 @@ export type TrendingCard = {
    * preenchido quando ≥ 1×; null = jovem demais para qualquer número.
    */
   partialScore: number | null;
+  /**
+   * Posição do vídeo entre os últimos uploads do MESMO formato do canal
+   * publicados antes dele (F1): bateu `beaten` de `of`. null = base
+   * recente insuficiente para comparar.
+   */
+  recentRank: { beaten: number; of: number } | null;
   videoId: string;
   title: string;
   thumbnailUrl: string | null;
