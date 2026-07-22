@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { BRAND } from "@/lib/brand";
 import "./globals.css";
 
@@ -52,7 +53,13 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${inter.variable} ${fraunces.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        {/* Vercel Web Analytics (item 5A): pageviews sem cookie, para
+            medir o funil landing → cadastro. Requer habilitar Web
+            Analytics no painel da Vercel. */}
+        <Analytics />
+      </body>
     </html>
   );
 }
