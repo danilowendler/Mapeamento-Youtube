@@ -58,11 +58,33 @@ A sessão dedicada rodou (22/07): **ADR-007 aceito** (doc 04 §4.2), patches nas
 
 ---
 
-## ⬇️ Feedbacks do YouTuber testador — A INCORPORAR
+## Feedbacks do YouTuber testador (recebidos 22/07)
 
-> **Seção reservada.** Os feedbacks de um YouTuber que está testando o site chegam a seguir;
-> serão triados e distribuídos nas frentes acima (ou em uma nova frente, se fizer sentido),
-> com esforço e dependência anotados. *— aguardando envio.*
+Triagem: viabilidade, esforço, recomendação. **F1 + F2 formam um lote coeso ("Trending v2")**;
+F3 é uma decisão de produto do fundador.
+
+### F1 · Trending: classificar o vídeo contra os vídeos recentes DO PRÓPRIO canal
+Pedido: mostrar "quão bem este vídeo foi vs. os últimos vídeos do canal" (ex.: "melhor que os últimos 3"), tipo K/N.
+- **Viável e on-philosophy** — continua relativo ao próprio canal (a premissa), e é **mais honesto** que o `partialScore` atual para vídeos < 14 dias: compara vídeo novo com outros vídeos recentes (idade parecida) em vez de com a mediana histórica madura (que subestima). Dados já no corpus (últimos uploads do canal). Read-time, sem migration, zero cota.
+- **Recomendação:** **substituir** o `partialScore`/"sem score ainda" como sinal primário da Trending — ranquear contra os últimos N uploads do **mesmo formato**, preferindo os mais antigos que o vídeo (beat honesto: já supera quem teve mais tempo). Display "melhor que K dos últimos N" (o "3/10" exato é escolha de UI).
+- Esforço: médio.
+
+### F2 · Trending: separar longos e shorts + sinalização especial nos shorts
+Pedido: hoje estão misturados; separar e destacar os shorts.
+- **Viável e ainda mais alinhado** à regra "shorts e longos nunca se misturam". A Trending mistura de propósito hoje (era "só recência × views"), mas um usuário real achou confuso.
+- **Recomendação:** separar por formato (sub-toggle Longos/Shorts na aba, ou dois grupos) + selo visual claro no short (ícone/pill), no lugar da etiqueta de texto atual. Combina com F1 (a comparação de F1 deve ser **dentro do formato**).
+- Esforço: pequeno-médio.
+
+### F3 · Diminuir ainda mais o score (fundador em dúvida — a avaliar)
+Pedido: baixar o score ainda mais (piso de exibição hoje = 1,5×).
+- **Possível?** Sim, trivial — é a constante `MIN_DISPLAY_SCORE`, read-time (como no T1).
+- **Faz sentido com a ideia do projeto?** Tensão com a premissa. O produto é **detector de outlier** — vídeos ACIMA da média do canal. 1× = exatamente a média; **abaixo de 1× = o vídeo foi PIOR que a média** (anti-sinal, sem valor para "o que fazer no próximo vídeo"). Baixar o piso dilui exatamente o que o produto existe para destacar (sinal > ruído, "vermelho escasso"). 1,5× já foi um esticão consciente (sinal fraco).
+- **Recomendação:** **não** baixar o default abaixo de 1,5×. Se quiser dar "mais para ver", no máximo uma opção **opt-in "≥ 1×"** no filtro de score (nunca abaixo de 1×). E: **o F1 provavelmente já resolve o desejo real por trás do F3** (ver como vídeos novos/menores vão, sem rebaixar o score). Decisão do fundador antes de qualquer código.
+- Esforço: trivial (se aprovado).
+
+### Encaminhamento
+- **F1 + F2 → lote "Trending v2"** na **Frente 5 (refinamentos)** — provável próximo lote de produto.
+- **F3 → decisão do fundador** (recomendação acima); F1 pode torná-lo desnecessário.
 
 ---
 
