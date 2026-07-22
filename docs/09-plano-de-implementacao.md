@@ -226,6 +226,26 @@ fora do tema). Plano em duas partes:
 fundador em produção. Depois: M9 final (security-audit + Playwright +
 go-live Stripe).
 
+## M12 · Cota & migração corpus-first (ADR-007, 22/07/2026)
+
+> Origem: sessão de arquitetura de cota. Decisão em [doc 4 §4.2, ADR-007](04-arquitetura.md);
+> pesquisa e plano em `docs/pesquisa/` (`relatorio-api-youtube.md`,
+> `plano-de-migracao-e-indexacao.md`). Direção **aceita**, execução **faseada e disparada
+> por métrica** — o custo real por pesquisa já caiu de ~920 para ~100–390 un, então a
+> reescrita completa **não** antecede o lançamento.
+
+### Fase 1 — alívio tático (imediato · sem reescrita · sem migration relevante)
+- **Solicitar a extensão de cota** (Audit & Quota Extension) — caminho crítico, leva meses.
+- Desmembrar o TTL do **mapa** keyword→canais (72 h → ~30 d) do frescor das métricas (7/30).
+- Roteador keyword→nicho/keyword-conhecida (`pg_trgm`); grafo (`relatedService`) como fonte de descoberta; alarme de `search.list`/dia em `monitorQuota`.
+
+✅ Conclusão: `search.list` frios/dia medidos e em queda; teto prático em centenas de assinantes; nenhuma regressão no fluxo validado.
+
+### Fase 2 — endgame (NÃO agendada; disparada por gatilho)
+- **Gatilho:** fila de prioridade 1–2 represada por dias **ou** extensão de cota aprovada.
+- Escopo: crons `discoverChannels`/`refreshCorpus`, inversão de prioridades no `quotaService`, fila de indexação (`index_queue`), busca 100% corpus, migração da métrica de plano (pesquisas → canais monitorados + pedidos de indexação). Plano arquivo-por-arquivo já escrito.
+- **Regra:** só detalhar o cronograma da Fase 2 aqui **quando o gatilho acender** — não antecipar.
+
 ## M11 · Pós-lançamento imediato (contínuo)
 Não é milestone de construção — é regime de operação: acompanhar métricas ([doc 1, §1.7](01-visao-de-produto.md) e [doc 7, §7.5](07-monetizacao.md)), triagem de feedback, ajuste de pricing com dados reais, pedido de aumento de cota ao Google quando a fila de prioridade 1–2 represar, e priorização do roadmap pós-MVP (Pix, anual, páginas SEO do corpus, IA).
 

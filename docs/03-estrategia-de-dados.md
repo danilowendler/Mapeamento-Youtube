@@ -52,6 +52,8 @@ As políticas de serviços da API do YouTube exigem que dados armazenados sejam 
 
 Recoleta incremental = buscar apenas vídeos novos desde a última coleta + atualizar métricas dos vídeos existentes em lotes de 50 (`videos.list`). Um job diário de manutenção renova os canais mais consultados dentro da sobra de cota do dia (prioridade mínima).
 
+> **Teto de tamanho do corpus (consequência dos Termos).** A regra dos 30 dias é "atualizar **ou** deletar". Manter N canais frescos custa ≈ `N × 2,5 un ÷ 30` por dia. Reservando ~metade da cota padrão para manutenção (~5.000 un/dia), o corpus sustentável **sob cota padrão** fica na ordem de **~60 mil canais** — acima disso, ou se deleta a cauda longa (perdendo fosso), ou se depende da extensão de cota. Ou seja: o corpus **não cresce sem limite**; ele precisa ser continuamente regado, e a torneira é fixa. É por isso que a **extensão de cota é estrutural**, não só uma aceleração — ela define o tamanho máximo conforme do índice.
+
 ## 3.4 Orçamento de cota (decisão)
 
 Serviço interno de **token bucket diário** sobre as 10.000 unidades, com reserva prévia: antes de qualquer chamada, o pipeline reserva o custo estimado; se não houver saldo, o job entra em fila para o próximo ciclo com aviso honesto na UI ("alta demanda — sua pesquisa está na fila").
@@ -82,6 +84,8 @@ resolver entrada → (se keyword/nicho) search.list → lista de canais-alvo
 - **Idempotência:** reprocessar uma etapa não duplica dados (upsert por ID do YouTube).
 - **Limites de paralelismo:** coleta de canais em paralelo controlado (evita rajadas contra a API e contra o Postgres).
 - **Profundidade de coleta (adaptativa desde o M4):** base de 200 vídeos mais recentes por canal (cobre ~2 anos da maioria dos canais ativos). Para canais de altíssima frequência de publicação (ex.: canais de cortes/lives com dezenas de uploads/dia), a *descoberta* pagina até 1.000 vídeos em busca de um mínimo de 50 vídeos elegíveis para baseline (≥ 14 dias), mas as *métricas* são buscadas só para os 200 mais recentes + os elegíveis (teto de 500) — profundidade sem desperdício de cota. Canal validado: CazéTV (~35 uploads/dia, 25 unidades, 71 vídeos com score).
+
+> **Direção (ADR-007, 22/07/2026):** este pipeline é hoje disparado **na requisição do usuário** — correto na Fase 1, porque o custo real já caiu para ~100–390 un/pesquisa (cache + coleta capada + ranking). A direção-alvo é **inverter o gatilho**: a coleta migra de *usuário* para *cron*, e a pesquisa passa a ser servida 100% do corpus (`search.list` só em background). A migração é **faseada e disparada por métrica** — ver [doc 4, ADR-007](04-arquitetura.md) e `docs/pesquisa/plano-de-migracao-e-indexacao.md`. Enquanto a Fase 2 não é acionada, este fluxo permanece a verdade operacional.
 
 ## 3.6 Motor de outliers (o algoritmo)
 
@@ -115,14 +119,20 @@ Cada card de resultado exibe a explicação: *"438 mil views — 18× a mediana 
 - **Sinais de engajamento:** razão likes/views e comentários/views como desempate.
 - **Feedback loop:** favoritos e exportações como sinal de qualidade da recomendação para calibrar pesos.
 
-## 3.7 Racionamento de `search.list` por plano
+## 3.7 Racionamento de `search.list` — e como reduzi-lo (ADR-007, Fase 1)
 
-Buscas por keyword são o recurso caro e, portanto, o eixo real dos planos ([doc 7](07-monetizacao.md)). Regras:
+Buscas por keyword são o **único** recurso caro (100 un/chamada + teto de ~100 chamadas/dia por projeto). Todo o resto — coleta, refresh — é abundante. Barateá-las é a pergunta central do ADR-007. Regras e alavancas:
 
-- Cada "pesquisa" do usuário consome 1 do contador mensal do plano, **independente de cache** (simplicidade > microotimização de billing; o cache beneficia a margem, não confunde o usuário).
-- Nicho curado consulta primeiro o cache de keywords (≤ 72 h); em cache quente, um nicho inteiro pode custar 0 unidades.
-- Análise direta de canal/lista **não** consome `search.list` — é barata e generosa em todos os planos.
+- **Cache do mapa keyword→canais com TTL longo.** O *mapa* de quais canais representam um tema (`keyword_results`) é um dado **estável** — os canais de "receita fácil" não mudam em dias. A partir da Fase 1, esse mapa é cacheado por **~30 dias** (não mais 72 h), enquanto as **métricas** dos vídeos/canais resolvidos seguem a política de frescor 7/30 (§3.3). Separar as duas TTLs corta a maioria dos `search.list` frios sem tocar em conformidade. *(Estado atual do código: TTL único de 72 h em `keywordService.KEYWORD_CACHE_HOURS` — a Fase 1 o desmembra.)*
+- **Roteador keyword→nicho/keyword-conhecida (`pg_trgm`, custo zero).** Keyword nova que casa por similaridade com um nicho curado ou com uma keyword já resolvida é servida do corpus, sem `search.list`. Só keyword genuinamente inédita paga a busca.
+- **Grafo como descoberta** (§3.8): antes de gastar `search.list`, expandir pelos canais que já coaparecem no corpus.
+- Nicho curado consulta primeiro o cache; em cache quente, um nicho inteiro custa **0 unidades**.
+- Análise direta de canal/lista **nunca** toca `search.list` — barata e generosa em todos os planos.
 
-## 3.8 Descoberta de canais relacionados (decisão de design)
+> **Métrica de plano (transição, ADR-007):** hoje conta-se "pesquisas/mês" (o proxy do custo de `search.list`). Quando a pesquisa passar a ser 100% corpus (Fase 2), esse proxy perde sentido e a cobrança migra para **canais monitorados + pedidos de indexação** — o que efetivamente consome cota. Ver [doc 7, §7.7](07-monetizacao.md).
+
+## 3.8 Descoberta de canais relacionados — e motor de descoberta do corpus (ADR-007)
 
 O endpoint oficial de canais relacionados foi descontinuado pelo YouTube. A descoberta é **derivada do corpus**: canais que coaparecem nos resultados das mesmas keywords/nichos ganham arestas de afinidade (tabela `channel_niche_affinity`, [doc 5](05-modelo-de-dados.md)). Quanto mais buscas acontecem, melhor a malha de relações — mais um retorno crescente do corpus compartilhado.
+
+Hoje esse grafo (`services/relatedService.ts` + `channel_niche_affinity`) alimenta **apenas a UI** de "canais relacionados". No ADR-007 ele é **promovido a motor de descoberta**: expandir o corpus pelos canais que já coaparecem custa **zero unidades** e é mais preciso que busca por string (segue comportamento real, não texto). É a alavanca de maior retorno e menor custo para crescer o corpus sem `search.list` — 80% do código já existe.
