@@ -9,7 +9,8 @@ const row = (
   channel_id: string,
   video_id: string | null,
   position: number,
-): KeywordMatchRow => ({ channel_id, video_id, position });
+  video_title: string | null = null,
+): KeywordMatchRow => ({ channel_id, video_id, video_title, position });
 
 describe("rankChannelsByRelevance (frequência × posição — T4 parte 1)", () => {
   it("aparições únicas: mantém a ordem de relevância (posição)", () => {
@@ -60,13 +61,13 @@ describe("rankChannelsByRelevance (frequência × posição — T4 parte 1)", ()
   });
 });
 
-describe("pickBestMatchPerChannel (vídeo que casou — T5)", () => {
+describe("pickBestMatchPerChannel (vídeo que casou — T5/T6.4)", () => {
   it("um canal: retorna o vídeo da menor posição", () => {
     const map = pickBestMatchPerChannel([
       row("c1", "vB", 5),
       row("c1", "vA", 2),
     ]);
-    expect(map.get("c1")).toBe("vA");
+    expect(map.get("c1")?.videoId).toBe("vA");
   });
 
   it("independe da ordem das linhas", () => {
@@ -74,7 +75,20 @@ describe("pickBestMatchPerChannel (vídeo que casou — T5)", () => {
       row("c1", "vA", 2),
       row("c1", "vB", 5),
     ]);
-    expect(map.get("c1")).toBe("vA");
+    expect(map.get("c1")?.videoId).toBe("vA");
+  });
+
+  it("carrega o título do vídeo escolhido (item 4)", () => {
+    const map = pickBestMatchPerChannel([
+      row("c1", "vB", 5, "Título B"),
+      row("c1", "vA", 2, "Título A"),
+    ]);
+    expect(map.get("c1")).toEqual({ videoId: "vA", title: "Título A" });
+  });
+
+  it("título nulo em linha antiga: mantém null (page faz fallback)", () => {
+    const map = pickBestMatchPerChannel([row("c1", "vA", 0)]);
+    expect(map.get("c1")).toEqual({ videoId: "vA", title: null });
   });
 
   it("vários canais: um vídeo por canal", () => {
@@ -83,8 +97,8 @@ describe("pickBestMatchPerChannel (vídeo que casou — T5)", () => {
       row("c2", "v2", 1),
       row("c2", "v9", 9),
     ]);
-    expect(map.get("c1")).toBe("v1");
-    expect(map.get("c2")).toBe("v2");
+    expect(map.get("c1")?.videoId).toBe("v1");
+    expect(map.get("c2")?.videoId).toBe("v2");
     expect(map.size).toBe(2);
   });
 
@@ -93,7 +107,7 @@ describe("pickBestMatchPerChannel (vídeo que casou — T5)", () => {
       row("c1", null, 0),
       row("c1", "v1", 3),
     ]);
-    expect(map.get("c1")).toBe("v1");
+    expect(map.get("c1")?.videoId).toBe("v1");
   });
 
   it("canal só com video_id nulo: fica de fora", () => {
