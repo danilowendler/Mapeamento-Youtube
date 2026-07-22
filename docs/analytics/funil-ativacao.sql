@@ -52,7 +52,7 @@ from public.profiles p
 left join public.searches s on s.user_id = p.id
 where s.id is null
 order by p.created_at desc;
-
+image.png
 
 -- 3) Pesquisaram mas NUNCA acharam oportunidade — se for grande, o
 --    problema é qualidade do resultado (o "aha" não chega) e não o
