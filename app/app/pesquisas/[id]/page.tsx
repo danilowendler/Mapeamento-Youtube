@@ -13,6 +13,9 @@ import {
   MIN_BUCKET_SAMPLE,
   MIN_DISPLAY_SCORE,
   partialScore,
+  rankAmongRecent,
+  RECENT_RANK_WINDOW,
+  type RecentRankVideo,
 } from "@/services/outliers";
 import { trendingSinceIso } from "@/services/freshness";
 import {
@@ -165,14 +168,55 @@ export default async function ResultadosPage({
         .map((b) => [`${b.channel_id}|${b.format}`, b.median_views]),
     );
 
+    // F1: para classificar cada vídeo da Trending contra os uploads
+    // recentes do MESMO formato do próprio canal (rankAmongRecent),
+    // buscamos o histórico recente só dos canais que aparecem na Trending
+    // (poucos) — read-time, corpus, zero cota. O piso de MIN_DISPLAY_SCORE
+    // não vale aqui: os priores incluem vídeos de qualquer performance.
+    const trendingChannelIds = [
+      ...new Set((trendingRes.data ?? []).map((v) => v.channel_id)),
+    ];
+    const { data: recentVideos } =
+      trendingChannelIds.length > 0
+        ? await supabase
+            .from("videos")
+            .select("youtube_id, channel_id, is_short, published_at, view_count")
+            .in("channel_id", trendingChannelIds)
+            .order("published_at", { ascending: false })
+            .limit(400)
+        : { data: [] };
+
+    // channel_id|short|long → priores do mesmo formato (mais recentes antes)
+    const recentByChannelFormat = new Map<string, RecentRankVideo[]>();
+    for (const v of recentVideos ?? []) {
+      const key = `${v.channel_id}|${v.is_short ? "short" : "long"}`;
+      const list = recentByChannelFormat.get(key) ?? [];
+      list.push({
+        youtubeId: v.youtube_id,
+        publishedAt: v.published_at ? new Date(v.published_at) : null,
+        viewCount: v.view_count,
+      });
+      recentByChannelFormat.set(key, list);
+    }
+
     trendingCards = (trendingRes.data ?? []).map((video) => {
       const channel = channelById.get(video.channel_id);
       const format = video.is_short ? "short" : "long";
+      const recentRank = rankAmongRecent(
+        {
+          youtubeId: video.youtube_id,
+          publishedAt: video.published_at ? new Date(video.published_at) : null,
+          viewCount: video.view_count,
+        },
+        recentByChannelFormat.get(`${video.channel_id}|${format}`) ?? [],
+        RECENT_RANK_WINDOW,
+      );
       return {
         partialScore: partialScore(
           video.view_count,
           medianByFormat.get(`${video.channel_id}|${format}`) ?? null,
         ),
+        recentRank,
         videoId: video.youtube_id,
         title: video.title,
         thumbnailUrl: video.thumbnail_url,

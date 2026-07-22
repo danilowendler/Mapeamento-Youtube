@@ -98,6 +98,58 @@ export function partialScore(
   return score >= 1 ? score : null;
 }
 
+/** Janela e amostra mínima do ranking contra os vídeos recentes (F1). */
+export const RECENT_RANK_WINDOW = 5;
+export const MIN_RECENT_RANK_SAMPLE = 3;
+
+export type RecentRankVideo = {
+  youtubeId: string;
+  publishedAt: Date | null;
+  viewCount: number | null;
+};
+
+/** Posição do vídeo entre os recentes do próprio canal: bateu `beaten` de `of`. */
+export type RecentRank = { beaten: number; of: number };
+
+/**
+ * Classifica um vídeo jovem (aba Trending — F1) contra os últimos N
+ * uploads do MESMO formato publicados ANTES dele no próprio canal.
+ *
+ * Comparação HONESTA para vídeos < 14 dias: em vez de dividir pela
+ * mediana histórica madura (que subestima views ainda em acúmulo — daí
+ * a regra dos 14 dias, doc 3 §3.6), confronta o vídeo com outros vídeos
+ * recentes do canal, que tiveram MAIS tempo para acumular. Superá-los
+ * já é sinal real de tração. `sameFormatVideos` deve conter só vídeos do
+ * mesmo formato do alvo (regra nº 2: shorts e longos nunca se misturam).
+ *
+ * Retorna null com base insuficiente (< MIN_RECENT_RANK_SAMPLE priores).
+ */
+export function rankAmongRecent(
+  video: RecentRankVideo,
+  sameFormatVideos: RecentRankVideo[],
+  window: number = RECENT_RANK_WINDOW,
+): RecentRank | null {
+  if (video.publishedAt === null || video.viewCount === null) return null;
+  const targetTime = video.publishedAt.getTime();
+  const targetViews = video.viewCount;
+
+  const priors: { time: number; views: number }[] = [];
+  for (const v of sameFormatVideos) {
+    if (v.youtubeId === video.youtubeId) continue;
+    if (v.publishedAt === null || v.viewCount === null) continue;
+    const time = v.publishedAt.getTime();
+    if (time >= targetTime) continue; // só os publicados ANTES do alvo
+    priors.push({ time, views: v.viewCount });
+  }
+
+  priors.sort((a, b) => b.time - a.time); // mais recentes primeiro
+  const windowed = priors.slice(0, window);
+  if (windowed.length < MIN_RECENT_RANK_SAMPLE) return null;
+
+  const beaten = windowed.filter((v) => targetViews > v.views).length;
+  return { beaten, of: windowed.length };
+}
+
 export type ChannelAnalysis = {
   baselines: Baseline[];
   videos: ScoredVideo[];
