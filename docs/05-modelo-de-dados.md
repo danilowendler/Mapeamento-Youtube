@@ -54,9 +54,11 @@ Catálogo curado (seed versionado em `supabase/`).
 | is_active | boolean | Permite despublicar sem apagar |
 
 ### `keyword_cache` e `keyword_results`
-Cache de `search.list` (TTL lógico de 72 h).
+Cache de `search.list` — o **mapa keyword→canais**, ativo central da descoberta barata (ADR-007).
 - `keyword_cache`: keyword normalizada **PK**, fetched_at, result_count.
-- `keyword_results`: (keyword FK, position) → channel_id, video_id — materializa quais canais/vídeos apareceram para a keyword.
+- `keyword_results`: (keyword FK, position) → channel_id, video_id (+ `channel_title`, `video_title` das migrations `20260712000002`/`20260721000001`) — materializa quais canais/vídeos apareceram para a keyword; é a matéria-prima do ranking por relevância e do grafo (`relatedService`).
+
+> **TTL do mapa vs. frescor das métricas (ADR-007, Fase 1).** O código usa hoje um TTL único de **72 h** (`keywordService.KEYWORD_CACHE_HOURS`) para decidir se re-executa o `search.list`. A Fase 1 **estende o TTL do mapa para ~30 dias** — a lista de canais de um tema é estável — enquanto as **métricas** dos canais resolvidos continuam governadas por `channels.refreshed_at` (7/30, §3.3 do [doc 3](03-estrategia-de-dados.md)). São dois relógios distintos: um decide "preciso buscar de novo os canais do tema?", o outro "preciso atualizar os números deste canal?". Mudança de parâmetro/lógica, sem alteração de schema.
 
 ### `channel_niche_affinity`
 Malha de "canais relacionados", derivada das coaparições em keywords/nichos.
@@ -130,3 +132,14 @@ Contadores de consumo por ciclo: (user_id, period_start) **PK composta**, period
 - Seed de nichos versionado e idempotente.
 - Convenções: snake_case; timestamps `timestamptz` sempre; soft delete apenas onde houver requisito real (não há, no MVP); FKs com `on delete cascade` somente da zona de usuário (apagar conta limpa tudo do usuário — requisito LGPD, [doc 8](08-seguranca-e-operacao.md)).
 - O corpus **nunca** referencia dados de usuário — garante que exclusão de contas não toca o ativo global.
+
+## 5.6 Modelo-alvo do corpus-first (ADR-007 · Fase 2 · planejado)
+
+> Registro do que muda no schema quando a Fase 2 do ADR-007 for acionada. **Ainda não implementado** — nenhuma migration nova é escrita antes do gatilho. A Fase 1 (alívio tático) **não exige migration**.
+
+- **`index_queue`** (nova, operacional) — a fila de indexação como entidade de produto: `id`, `user_id` (nulo se originada pela descoberta), `channel_input`, `niche_id`, `plan_code`, `priority`, `status` (`queued·collecting·done·failed`), `requested_at`, `completed_at`. É o que resolve o "colar canal frio" no modelo corpus-first (vira 202 + notificação via Realtime, repropósito do ADR-004).
+- **Canais monitorados** — **reusar `channel_refs`** (já criada no Workspace, M10.5/B5: `user_id`, `channel_id`, `folder_id`, RLS por dono) em vez de tabela nova. "Monitorar para alertas de outlier" é uma flag a adicionar (`alerts_enabled`), não uma entidade nova — evita duplicar o conceito de "canal salvo pelo usuário". Decisão de modelagem a confirmar na implementação.
+- **`niches` como fonte de descoberta** — já existe (22 nichos PT-BR seedados). A Fase 2 adiciona colunas de operação de descoberta (`priority`, `last_discovered_at`) e usa `niches.keywords` como as queries do worker `discoverChannels`. **Não** criar tabela `verticais` — as docs de pesquisa a mencionam, mas o schema real já tem `niches`.
+- **`plans.limits` (jsonb, sem migration)** — adicionar `monitored_channels` e `index_requests_per_month`; `searches_per_month` deixa de ser o eixo (pesquisa vira ilimitada). Ver [doc 7, §7.7](07-monetizacao.md).
+- **`usage_periods`** — hoje conta `searches_used`. A Fase 2 conta `index_requests_used` (fluxo mensal); "canais monitorados" é **estado** (conta linhas em `channel_refs` com `alerts_enabled`), não fluxo — não precisa de contador de período.
+- **Camadas de refresh** — coluna `refresh_tier` (`A·B·C`) em `channels`, alimentada pelo worker `refreshCorpus` conforme relevância (§5.1 do [doc 3](03-estrategia-de-dados.md)).

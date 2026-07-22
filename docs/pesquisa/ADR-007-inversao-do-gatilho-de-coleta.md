@@ -1,11 +1,18 @@
 # ADR-007 · Inversão do gatilho de coleta (usuário → cron)
 
-> **STATUS: PROPOSTO — em pesquisa.** Stub-âncora criado em 21/07/2026 para a sessão
-> dedicada ao problema de cota da YouTube Data API. Ainda **não é uma decisão fechada**:
-> os ADR-001…006 (em `docs/04-arquitetura.md` §4.2) estão decididos; este fica separado
-> de propósito para não se passar por decisão tomada. **Quando decidido, promover para
-> `docs/04-arquitetura.md` no mesmo formato (Decisão/Motivo/Rejeitado) e atualizar as
-> docs 03 e 05.**
+> **STATUS: DECIDIDO E PROMOVIDO (22/07/2026).** A decisão vive agora em
+> **[`docs/04-arquitetura.md` §4.2, ADR-007](../04-arquitetura.md)** (formato
+> Decisão/Motivo/Rejeitado dos demais ADRs). Foi **aceita como direção**, com
+> **execução faseada disparada por métrica**: Fase 1 (alívio tático, sem reescrita) +
+> Fase 2 (endgame, disparado pela fila de prioridade 1–2 represada ou pela extensão de
+> cota aprovada).
+>
+> Este arquivo permanece como **registro histórico** da pesquisa que fundamentou o ADR.
+> O relatório de validação da API (custos, extensão, OAuth, Termos) e o comparativo das
+> alternativas de descoberta estão em
+> [`relatorio-api-youtube.md`](relatorio-api-youtube.md); o plano de execução refinado
+> contra o código real está em
+> [`plano-de-migracao-e-indexacao.md`](plano-de-migracao-e-indexacao.md).
 >
 > Material de partida: `arquitetura-e-monetizacao-corpus-indexado.md` (o porquê) e
 > `proposta-inversao-do-gatilho-de-coleta.md` (o como).

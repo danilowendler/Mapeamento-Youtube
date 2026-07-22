@@ -55,6 +55,19 @@
 **Decisão:** limites de plano verificados nos services (única porta de entrada das operações) com contadores em `usage_periods`; a UI apenas reflete o estado.
 **Motivo:** limite aplicado só na UI é limite inexistente. O contador no banco com verificação transacional impede corrida (duas pesquisas simultâneas estourando o limite).
 
+### ADR-007 · Descoberta servida pelo corpus; `search.list` fora do request-path
+**Decisão:** a YouTube Data API é tratada como **alimentadora de um índice próprio**, nunca como fonte no caminho de uma requisição. Direção-alvo: (1) toda pesquisa do usuário é servida do corpus Postgres (cota zero, latência de ms); (2) `search.list` — o único endpoint escasso (100 un/chamada **e** teto de ~100 chamadas/dia por projeto, [doc 3, §3.1](03-estrategia-de-dados.md)) — existe apenas em workers de background e nunca é disparado sincronamente por um usuário; (3) a métrica de cobrança migra de "pesquisas/mês" para **canais monitorados + pedidos de indexação** ([doc 7](07-monetizacao.md)). A **execução é faseada e disparada por métrica**, não uma reescrita imediata.
+
+**Motivo:** `search.list` acopla o teto de receita da plataforma ao teto de cota do YouTube e colapsa a operação em pico de tráfego; coleta e refresh (1 un) são abundantes. Servir do corpus torna a pesquisa ilimitada, instantânea e defensável — o corpus é o fosso competitivo ([doc 3, §3.2](03-estrategia-de-dados.md)). **Faseado** porque o custo real por pesquisa já caiu de ~920 para **~100–390 un** (cache de 72 h + coleta capada em ~9 un/canal + ranking por relevância, tudo já em produção) e o gargalo ainda não represa: reescrever o pipeline validado antes do lançamento seria otimização prematura com risco de regressão.
+
+**Fase 1 — alívio tático (sem reescrita):** solicitar a extensão de cota (leva meses — bloqueante de *escala*, não de lançamento); estender o TTL do **mapa** keyword→canais de 72 h para ~30 dias (separado do frescor das *métricas*, que segue 7/30); roteador keyword→nicho/keyword-conhecida via `pg_trgm` (keyword nova que casa com tema já resolvido não paga `search.list`); servir o corpus na hora e rebaixar o `search.list` frio para background; instrumentar a contagem de `search.list`/dia em `monitorQuota`.
+
+**Fase 2 — endgame (gatilho abaixo):** crons `discoverChannels` (único lugar com `search.list`) e `refreshCorpus` (camadas A/B/C, conformidade de 30 dias); `channel_niche_affinity`/`relatedService` promovidos de UI a **motor de descoberta**; `searchService` de duas saídas (corpus quente → 200; frio → enfileira indexação → 202, agora exceção); `runSearch` aposentado como caminho padrão; fila de indexação como entidade; migração da métrica de plano.
+
+**Rejeitado:** (a) reescrita imediata corpus-first pré-lançamento — semanas de trabalho e risco de regressão num fluxo validado, para um gargalo que ainda não morde; (b) OAuth/multi-conta para multiplicar cota — a cota é por **projeto GCP** e OAuth não a aumenta (confirmado na doc oficial); (c) tese de "corpus sem teto" — os Termos exigem refresh/delete em 30 dias, impondo teto de ~60 mil canais sob cota padrão (a extensão é o que o eleva); (d) `tsvector` sobre **todos** os títulos como via principal de descoberta — cobertura ruidosa e cara; o ativo real é o **mapa keyword→canais** (`keyword_results`, já existente) + o grafo, muito menores.
+
+**Gatilho de revisão (início da Fase 2):** `monitorQuota` acusar a fila de prioridade 1–2 represada por dias consecutivos, **ou** a extensão de cota aprovada — o que vier primeiro. Reavaliar o modelo quando o corpus passar de ~50 mil canais (limite de conformidade de 30 dias).
+
 ## 4.3 Camadas e responsabilidades
 
 | Camada | Local | Responsabilidade | Proibido |
@@ -102,7 +115,7 @@ Stripe Checkout (criação) e Customer Portal (gestão) — nunca formulário de
 
 | Gargalo futuro | Sinal | Resposta preparada |
 |---|---|---|
-| Cota 10k/dia | Fila de prioridade 1–2 constantemente represada | Pedido de aumento ao Google (métricas de consumo já registradas desde o dia 1) |
+| Cota 10k/dia (`search.list`) | Fila de prioridade 1–2 constantemente represada, ou muitos `search.list` frios/dia | **Fase 1** já feita (cache do mapa, roteador keyword→nicho, grafo, search em background); **Fase 2** (inversão do gatilho, ADR-007) + pedido de aumento ao Google (métricas de consumo registradas desde o dia 1) |
 | Compute de análise | Jobs Inngest lentos/caros | Extrair `jobs/` + `services/analysis` para worker dedicado (Railway/Fly); camadas já isolam |
 | Leitura do corpus | Latência de consulta com corpus grande | Índices já previstos ([doc 5](05-modelo-de-dados.md)); depois, réplicas de leitura |
 | Realtime | Limites de conexões simultâneas | Fallback para polling já trivial na arquitetura |

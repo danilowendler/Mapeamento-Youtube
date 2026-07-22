@@ -45,3 +45,15 @@ MRR · assinantes por plano · conversão free→pago (meta ≥ 3% em 30 dias) �
 1. **URLs de resultado compartilháveis** ([doc 6, §6.4](06-ux-ui.md)) — pesquisa vista por não-usuário → cadastro para pesquisar o próprio nicho.
 2. **Corpus como conteúdo:** páginas públicas SEO com recortes agregados por nicho ("os vídeos que explodiram em Finanças este mês") — candidato pós-MVP, motor de aquisição orgânica barato.
 3. **Exportação carimbada:** CSV inclui linha de origem com URL do produto — distribuição passiva via relatórios de agências.
+
+## 7.7 Transição da métrica de cobrança (ADR-007 · planejado)
+
+O eixo de preço atual — **pesquisas/mês** — é o proxy do custo de `search.list` no modelo de coleta-em-request-time. Quando a pesquisa passar a ser servida 100% do corpus (Fase 2 do [ADR-007](04-arquitetura.md)), esse proxy perde sentido: pesquisa deixa de custar cota e limitá-la só pune a exploração, que é o momento de ativação. A cobrança migra para o que **de fato** consome cota e entrega valor:
+
+| Métrica nova | O que é | Substitui |
+|---|---|---|
+| **Canais monitorados** | canais que o usuário acompanha com alertas de outlier (estado; apoia-se em `channel_refs`) | — (novo eixo) |
+| **Pedidos de indexação/mês** | canais frios que o usuário manda mapear (fluxo; consome cota de coleta) | parte de "pesquisas/mês" |
+| **Pesquisas no corpus** | **ilimitadas em todos os planos** | "pesquisas/mês" como limite |
+
+**Não é uma decisão de pricing fechada** — os números (quantos canais monitorados por plano, preço) ficam para uma revisão de monetização dedicada, com dados reais de uso (§7.2 já pede isso). O que o ADR-007 fixa é a **direção do eixo**: de "quantas vezes você buscou" para "quantos canais você acompanha + quantos você pediu para mapear". A tabela de planos rica das docs de pesquisa (`docs/pesquisa/arquitetura-e-monetizacao-corpus-indexado.md` §7) é o material de partida dessa revisão, não um compromisso.
