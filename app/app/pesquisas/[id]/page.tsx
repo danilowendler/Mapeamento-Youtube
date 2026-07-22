@@ -16,6 +16,7 @@ import {
 } from "@/services/outliers";
 import { trendingSinceIso } from "@/services/freshness";
 import {
+  type ChannelMatch,
   MAX_KEYWORDS_PER_NICHE,
   matchedVideosByChannel,
   normalizeKeyword,
@@ -243,27 +244,37 @@ export default async function ResultadosPage({
       .map(normalizeKeyword);
   }
 
-  const matchedVideoByChannel =
+  const matchedByChannel: Map<string, ChannelMatch> =
     matchKeywords.length > 0
       ? await matchedVideosByChannel(matchKeywords)
-      : new Map<string, string>();
+      : new Map();
 
-  // Título do vídeo que casou — só quando já está no corpus (degrada
-  // em silêncio: sem título, o chip simplesmente não ganha a linha)
-  const matchedVideoIds = [...new Set(matchedVideoByChannel.values())];
-  const { data: matchedTitleRows } =
-    matchedVideoIds.length > 0
+  // Título do vídeo que casou — preferimos o guardado no keyword_results
+  // (cobertura 100% nas buscas novas, item 4); só caímos no join com
+  // `videos` para linhas antigas sem título (degrada em silêncio: sem
+  // título de nenhuma fonte, o chip simplesmente não ganha a linha).
+  const fallbackVideoIds = [
+    ...new Set(
+      [...matchedByChannel.values()]
+        .filter((m) => !m.title?.trim())
+        .map((m) => m.videoId),
+    ),
+  ];
+  const { data: fallbackTitleRows } =
+    fallbackVideoIds.length > 0
       ? await supabase
           .from("videos")
           .select("youtube_id, title")
-          .in("youtube_id", matchedVideoIds)
+          .in("youtube_id", fallbackVideoIds)
       : { data: [] };
-  const titleByVideo = new Map(
-    (matchedTitleRows ?? []).map((v) => [v.youtube_id, v.title]),
+  const fallbackTitleByVideo = new Map(
+    (fallbackTitleRows ?? []).map((v) => [v.youtube_id, v.title]),
   );
   const matchedTitleByChannel = new Map<string, string>();
-  for (const [channelId, videoId] of matchedVideoByChannel) {
-    const title = titleByVideo.get(videoId);
+  for (const [channelId, match] of matchedByChannel) {
+    const title = match.title?.trim()
+      ? match.title
+      : fallbackTitleByVideo.get(match.videoId);
     if (title) matchedTitleByChannel.set(channelId, title);
   }
 

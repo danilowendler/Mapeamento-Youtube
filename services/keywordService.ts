@@ -72,6 +72,7 @@ export async function resolveKeywordChannels(
         channel_id: hit.channelId,
         channel_title: hit.channelTitle,
         video_id: hit.videoId,
+        video_title: hit.videoTitle,
       })),
     );
     if (resultsError) {
@@ -149,28 +150,36 @@ export async function resolveNicheChannels(
 export type KeywordMatchRow = {
   channel_id: string;
   video_id: string | null;
+  video_title: string | null;
   position: number;
 };
+
+/** Vídeo que casou com a busca, por canal: id + título (quando gravado). */
+export type ChannelMatch = { videoId: string; title: string | null };
 
 /**
  * "Vídeo que casou": para cada canal, o vídeo de melhor posição que o
  * trouxe para a busca (Pré-M9 T5). Ignora linhas sem video_id. Puro —
- * não depende da ordem das linhas.
+ * não depende da ordem das linhas. Carrega o título (item 4): nulo em
+ * linhas antigas (anteriores à migração), aí a página faz o fallback.
  */
 export function pickBestMatchPerChannel(
   rows: KeywordMatchRow[],
-): Map<string, string> {
-  const bestVideo = new Map<string, string>();
+): Map<string, ChannelMatch> {
+  const bestMatch = new Map<string, ChannelMatch>();
   const bestPos = new Map<string, number>();
   for (const row of rows) {
     if (!row.video_id) continue;
     const prev = bestPos.get(row.channel_id);
     if (prev === undefined || row.position < prev) {
-      bestVideo.set(row.channel_id, row.video_id);
+      bestMatch.set(row.channel_id, {
+        videoId: row.video_id,
+        title: row.video_title,
+      });
       bestPos.set(row.channel_id, row.position);
     }
   }
-  return bestVideo;
+  return bestMatch;
 }
 
 /**
@@ -180,12 +189,12 @@ export function pickBestMatchPerChannel(
  */
 export async function matchedVideosByChannel(
   keywords: string[],
-): Promise<Map<string, string>> {
+): Promise<Map<string, ChannelMatch>> {
   if (keywords.length === 0) return new Map();
   const db = createAdminClient();
   const { data } = await db
     .from("keyword_results")
-    .select("channel_id, video_id, position")
+    .select("channel_id, video_id, video_title, position")
     .in("keyword", keywords);
   return pickBestMatchPerChannel(data ?? []);
 }

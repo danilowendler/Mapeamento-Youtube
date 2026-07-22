@@ -149,6 +149,7 @@ export async function getUploadsPage(
 
 export type SearchHit = {
   videoId: string;
+  videoTitle: string;
   channelId: string;
   channelTitle: string;
 };
@@ -164,7 +165,7 @@ export async function searchVideosByKeyword(
   const data = await ytFetch<{
     items?: {
       id?: { videoId?: string };
-      snippet?: { channelId?: string; channelTitle?: string };
+      snippet?: { channelId?: string; channelTitle?: string; title?: string };
     }[];
   }>("search", {
     part: "snippet",
@@ -180,6 +181,7 @@ export async function searchVideosByKeyword(
     .filter((item) => item.id?.videoId && item.snippet?.channelId)
     .map((item) => ({
       videoId: item.id!.videoId!,
+      videoTitle: item.snippet?.title ?? "",
       channelId: item.snippet!.channelId!,
       channelTitle: item.snippet?.channelTitle ?? "",
     }));
