@@ -66,14 +66,15 @@ F3 é uma decisão de produto do fundador.
 ### F1 · Trending: classificar o vídeo contra os vídeos recentes DO PRÓPRIO canal
 Pedido: mostrar "quão bem este vídeo foi vs. os últimos vídeos do canal" (ex.: "melhor que os últimos 3"), tipo K/N.
 - **Viável e on-philosophy** — continua relativo ao próprio canal (a premissa), e é **mais honesto** que o `partialScore` atual para vídeos < 14 dias: compara vídeo novo com outros vídeos recentes (idade parecida) em vez de com a mediana histórica madura (que subestima). Dados já no corpus (últimos uploads do canal). Read-time, sem migration, zero cota.
-- **Recomendação:** **substituir** o `partialScore`/"sem score ainda" como sinal primário da Trending — ranquear contra os últimos N uploads do **mesmo formato**, preferindo os mais antigos que o vídeo (beat honesto: já supera quem teve mais tempo). Display "melhor que K dos últimos N" (o "3/10" exato é escolha de UI).
-- Esforço: médio.
+- **Decisão do fundador (22/07): MANTER o `partialScore` E ADICIONAR a classificação** (não substituir). ✅ Aprovado — lote "Trending v2".
+- **Plano de implementação:** helper puro `rankAmongRecent(video, canalMesmoFormato, window=5)` em `services/outliers.ts` (+ testes) que compara o vídeo com os últimos N uploads do **mesmo formato publicados ANTES dele** (beat honesto: já supera quem teve mais tempo) → `{ beaten, of }` ou null se base insuficiente; novo campo `recentRank` no `TrendingCard`; a page busca os vídeos recentes do mesmo formato dos canais do Trending (read-time, corpus, zero cota) e computa; o `TrendingVideoCard` ganha a linha "melhor que K dos últimos N vídeos do canal" (mantendo o selo de score parcial).
+- Esforço: médio. **Pendente: implementar após a compactação.**
 
 ### F2 · Trending: separar longos e shorts + sinalização especial nos shorts
 Pedido: hoje estão misturados; separar e destacar os shorts.
 - **Viável e ainda mais alinhado** à regra "shorts e longos nunca se misturam". A Trending mistura de propósito hoje (era "só recência × views"), mas um usuário real achou confuso.
-- **Recomendação:** separar por formato (sub-toggle Longos/Shorts na aba, ou dois grupos) + selo visual claro no short (ícone/pill), no lugar da etiqueta de texto atual. Combina com F1 (a comparação de F1 deve ser **dentro do formato**).
-- Esforço: pequeno-médio.
+- **✅ Aprovado — lote "Trending v2".** Separar a aba Trending em **duas seções (Vídeos longos / Shorts)** no `ResultsView` + **selo "SHORT"** no `TrendingVideoCard` (sem vermelho, que é reservado) no lugar da etiqueta de texto atual. Combina com F1 (a comparação é **dentro do formato**).
+- Esforço: pequeno-médio. **Pendente: implementar após a compactação.**
 
 ### F3 · Diminuir ainda mais o score (fundador em dúvida — a avaliar)
 Pedido: baixar o score ainda mais (piso de exibição hoje = 1,5×).
